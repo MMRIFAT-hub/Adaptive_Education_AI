@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lessons</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    #lesson-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .lesson {
+      margin-bottom: 20px;
+    }
+
+    .lesson p {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .lesson-content {
+      margin-left: 20px;
+      font-size: 16px;
+    }
+
+    #lesson-selection {
+      margin-bottom: 20px;
+    }
+
+    .lesson-button {
+      padding: 10px 20px;
+      background-color: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 5px;
+    }
+
+    .lesson-button:hover {
+      background-color: #1559b4;
+    }
+
+    .glow-title {
+      font-size: 24px;
+      text-align: center;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <ul class="nav-bar">
+        <li class="logo"><a href="homeStudent.html">EDGo Logo</a></li>
+        <li><a href="index.html" class="home" title="Home">Home</a></li>
+        <li><a href="personalInfo.html" class="profile-icon" title="Profile">Profile</a></li>
+        <li><a href="#" class="aboutUs" title="About Us">About Us</a></li>
+      </ul>
+      <h1 class="glow-title">Lessons</h1>
+    </nav>
+  </header>
+
+  <main>
+    <div id="lesson-container">
+      <h2>Select a Topic to View Lessons</h2>
+
+      <div id="lesson-selection">
+        <button class="lesson-button" onclick="fetchLesson('Principles of OOP')">Principles of OOP</button>
+        <button class="lesson-button" onclick="fetchLesson('Classes and Objects')">Classes and Objects</button>
+        <button class="lesson-button" onclick="fetchLesson('Inheritance and Polymorphism')">Inheritance and Polymorphism</button>
+      </div>
+
+      <div id="lessons">
+        <!-- Lessons will be dynamically loaded here -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Markdown renderer for GPT response -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <script>
+    async function fetchLesson(topic) {
+      try {
+        const response = await fetch("http://127.0.0.1:5000/teach_topic", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            topic: topic,
+            level: "Beginner"
+          })
+        });
+
+        const data = await response.json();
+        const lessonContainer = document.getElementById("lessons");
+
+        lessonContainer.innerHTML = `
+          <div class="lesson">
+            <p>${data.topic}</p>
+            <div class="lesson-content">${marked.parse(data.lesson)}</div>
+          </div>
+        `;
+      } catch (err) {
+        console.error("Error fetching lesson:", err);
+      }
+    }
+  </script>
+</body>
+</html>

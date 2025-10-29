@@ -1,0 +1,196 @@
+/* Reset & Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family:'Courier New', Courier, monospace;
+  background-color: #111;
+  color: #fff;
+  line-height: 1.6;
+}
+
+/* Header */
+header {
+  background-color: #111;
+  padding: 20px;
+  text-align: center;
+  position: relative;
+}
+
+header h1 {
+  font-size: 36px;
+  text-transform: uppercase;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 15px rgba(0, 204, 255, 0.6);
+}
+
+header .backButton {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  background-image: url('../img/back.png');
+  background-size: cover;
+  height: 60px;
+  width: 60px;
+  border: none;
+  cursor: pointer;
+  text-indent: -9999px;
+  z-index: 10;
+}
+
+header .profile-icon-1 {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  font-size: 20px;
+}
+
+/* Main Section */
+section {
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.personal-info {
+  width: 100%;
+  max-width: 600px;
+  background-color: rgba(0, 0, 0, 0.8);
+  border-radius: 10px;
+  padding: 30px;
+  box-shadow: 0 4px 20px rgba(0, 204, 255, 0.2);
+}
+
+.info-item {
+  margin-bottom: 20px;
+}
+
+.info-item label {
+  font-size: 18px;
+  font-weight: bold;
+  color: #00ccff;
+  display: block;
+}
+
+.info-item span {
+  font-size: 20px;
+  display: block;
+  margin-top: 5px;
+}
+
+.info-item span#name,
+.info-item span#department,
+.info-item span#email,
+.info-item span#mobile {
+  font-size: 22px;
+}
+
+/* Change Password Section */
+.change-password-section {
+  margin-top: 40px;
+  width: 100%;
+  max-width: 600px;
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 20px 30px;
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(0, 204, 255, 0.15);
+}
+
+.change-password-section h3 {
+  font-size: 22px;
+  margin-bottom: 15px;
+  color: #00ccff;
+}
+
+.change-password-section input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  font-size: 16px;
+  border: 1px solid #00ccff;
+  border-radius: 5px;
+  background-color: #222;
+  color: #fff;
+}
+
+.change-password-section button {
+  width: 100%;
+  padding: 10px;
+  background-color: #00ccff;
+  color: #000;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.change-password-section button:hover {
+  background-color: #00b3e6;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  margin-top: 50px;
+  position: relative;
+}
+
+footer .advance {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  background-image: url('../img/front.png');
+  background-size: cover;
+  height: 60px;
+  width: 60px;
+  border: none;
+  cursor: pointer;
+  text-indent: -9999px;
+  z-index: 5;
+}
+
+/* Utility Classes */
+a {
+  color: #00ccff;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.glow-title,
+.glow-title-2 {
+  text-shadow: 0 0 15px rgba(0, 204, 255, 0.8);
+  font-family: 'Courier New', Courier, monospace;
+  color: white;
+  text-align: center;
+  margin: 20px 0;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+  header h1 {
+    font-size: 28px;
+  }
+
+  .personal-info,
+  .change-password-section {
+    padding: 20px;
+  }
+
+  .info-item label,
+  .change-password-section h3 {
+    font-size: 16px;
+  }
+
+  .info-item span,
+  .change-password-section input {
+    font-size: 18px;
+  }
+}

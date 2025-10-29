@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            background-color: black;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .title-ques {
+            font-size: 30px;
+            text-align: center;
+            color: white;
+            text-shadow: 0 0 10px #7098ff;
+            font-family: 'Courier New', Courier, monospace;
+            margin-top: 50px;
+            margin-bottom: 5%;
+        }
+        .form-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .response {
+            color: white;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="title-ques">
+        <h1>Topic Summary</h1>
+    </div>
+    
+    <div class="form-container">
+        <input type="text" id="topic" placeholder="Enter topic here" style="padding: 10px; font-size: 18px;">
+        <button onclick="generateQuestionAndAnswer()" style="padding: 10px; font-size: 18px;">Generate Question & Answer</button>
+    </div>
+
+    <div class="response" id="response-container"></div>
+
+    <script>
+        async function generateQuestionAndAnswer() {
+            const topic = document.getElementById("topic").value;
+            const responseContainer = document.getElementById("response-container");
+
+            if (topic === "") {
+                responseContainer.innerHTML = "Please enter a topic.";
+                return;
+            }
+
+            try {
+                const res = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ topic: topic })
+                });
+
+                const data = await res.json();
+                if (data.question && data.answer) {
+                    responseContainer.innerHTML = `<h3>Question:</h3><p>${data.question}</p><h3>Answer:</h3><p>${data.answer}</p>`;
+                } else {
+                    responseContainer.innerHTML = "Error generating the question and answer.";
+                }
+            } catch (error) {
+                responseContainer.innerHTML = "Error fetching data.";
+            }
+        }
+    </script>
+</body>
+</html>

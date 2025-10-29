@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add New Student</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <nav>
+      <ul class="nav-bar">
+        <li class="logo"><a href="index.html">EDGo Logo</a></li>
+        <div class="center-links">
+          <h1 class="glow-title">Add New Student</h1>
+        </div>
+      </ul>
+      <a href="index.html" class="home" title="Home">Back to Dashboard</a>
+    </nav>
+  </header>
+
+  <section class="student-registration">
+    <h2>Enter Student Details</h2>
+    <form id="student-form">
+      <input type="email" id="student-email" placeholder="Enter student's email" required />
+      <button type="submit">Add Student</button>
+    </form>
+  </section>
+
+  <footer>
+    Dhaka, Bangladesh
+  </footer>
+
+  <!-- Firebase Script for Adding Student -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getDatabase, ref, set, get, child, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyD63qm0V0F0Y0PExzmmOCP9nJ7a6x1vCgs",
+      authDomain: "edora2.firebaseapp.com",
+      projectId: "edora2",
+      storageBucket: "edora2.firebasestorage.app",
+      messagingSenderId: "908106047332",
+      appId: "1:908106047332:web:4b412cd208e88fceb06471",
+      measurementId: "G-ELBKQDSSKC",
+      databaseURL: "https://edora2-default-rtdb.asia-southeast1.firebasedatabase.app"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);  // Get the Realtime Database reference
+
+    // Simulated logged-in teacher's ID (replace this with real authentication logic)
+    const teacherId = "teacher123";  // Replace with the actual logged-in teacher ID
+
+    // Check if email is registered
+    function checkIfStudentEmailExists(email) {
+      const studentsRef = ref(database, 'students'); // Reference to students data
+      const emailQuery = query(studentsRef, orderByChild('email'), equalTo(email)); // Query by email
+
+      return get(emailQuery)
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            return snapshot.val(); // Return student data if email exists
+          } else {
+            return null; // Return null if email doesn't exist
+          }
+        })
+        .catch(error => {
+          console.error("Error checking email:", error);
+          alert("Error checking email.");
+        });
+    }
+
+    // Add Student by Email
+    document.getElementById('student-form').addEventListener('submit', function(event) {
+      event.preventDefault();  // Prevent form submission
+
+      const email = document.getElementById('student-email').value;
+
+      if (email) {
+        // Check if the email exists in the database
+        checkIfStudentEmailExists(email).then(studentData => {
+          if (studentData) {
+            // Proceed with adding the student to the teacher's list
+            const studentId = email.split('@')[0];  // Generate a unique ID from the email
+            const studentToAdd = {
+              studentId: studentId,
+              name: studentData.name || "Unknown",  // Default to "Unknown" if name not found
+              midtermScore: 0,                      // Default score, should be updated later
+              maxScore: 100,                        // Default max score
+              completedLevels: [false, false, false], // Default completed levels
+              retakeDate: null,                     // No retake initially
+              teacherId: teacherId,                 // Associate the student with the teacher
+              email: email
+            };
+
+            const newStudentRef = ref(database, 'teacher_students/' + teacherId + '/' + studentId);  // Store under teacher's ID
+            set(newStudentRef, studentToAdd)
+              .then(() => {
+                console.log("Student added successfully!");
+                document.getElementById('student-email').value = '';  // Clear the input
+                alert('Student added successfully!');
+              })
+              .catch((error) => {
+                console.error("Error adding student:", error);
+                alert('Error adding student');
+              });
+          } else {
+            // Show alert if email is not registered
+            alert("Email is not registered. Please provide a valid registered email.");
+          }
+        });
+      } else {
+        alert('Please enter a valid email address.');
+      }
+    });
+  </script>
+
+</body>
+</html>

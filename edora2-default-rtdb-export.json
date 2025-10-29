@@ -1,0 +1,36 @@
+{
+  "students": {
+    "110": {
+      "name": "Arefin",
+      "midtermScore": 25,
+      "maxScore": 30,
+      "completedLevels": [true, true, true],
+      "retakeDate": "July 31, 2025 at 12:00:00 AM UTC+6",
+      "studentId": "110"
+    },
+    "039": {
+      "name": "Ashikur",
+      "midtermScore": 28,
+      "maxScore": 30,
+      "completedLevels": [true, true, true],
+      "retakeDate": "July 31, 2025 at 12:00:00 AM UTC+6",
+      "studentId": "039"
+     },
+     "089": {
+      "name": "Faiza",
+      "midtermScore": 27,
+      "maxScore": 30,
+      "completedLevels": [true, true, true],
+      "retakeDate": "July 31, 2025 at 12:00:00 AM UTC+6",
+      "studentId": "089"
+     },
+     "100": {
+      "name": "Rifat",
+      "midtermScore": 29,
+      "maxScore": 30,
+      "completedLevels": [true, true, true],
+      "retakeDate": "July 31, 2025 at 12:00:00 AM UTC+6",
+      "studentId": "100"
+     }
+  }
+}

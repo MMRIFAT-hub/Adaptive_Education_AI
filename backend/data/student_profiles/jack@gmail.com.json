@@ -1,0 +1,19 @@
+{
+  "student_id": "jack@gmail.com",
+  "topics": {
+    "Class_label": 2,
+    "Constructor_label": 68,
+    "Encapsulation_label": 99,
+    "Inheritance_label": 22,
+    "Interface_label": 52,
+    "Polymorphism_label": 60
+  },
+  "predicted_levels": {
+    "Class_label": "Beginner",
+    "Constructor_label": "Advanced",
+    "Encapsulation_label": "Advanced",
+    "Inheritance_label": "Beginner",
+    "Interface_label": "Intermediate",
+    "Polymorphism_label": "Advanced"
+  }
+}

@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grade Students</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* General Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f7fc;
+  color: #333;
+}
+
+/* Header Styles */
+header {
+  background-color: #000000;
+  color: #fff;
+  padding: 20px 0;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+header .nav-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+}
+
+header .logo a {
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+header .center-links {
+  font-size: 30px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+/* Main Form Section */
+.exam-config, .grading-section {
+  margin: 20px;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: white;
+}
+
+.exam-config h2, .grading-section h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 10px;
+}
+
+input[type="number"], input[type="text"], input[type="email"] {
+  margin-top: 5px;
+  width: 250px;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+button {
+  padding: 12px;
+  font-size: 16px;
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 10px;
+}
+
+button:hover {
+  background-color: #1559b4;
+}
+
+/* Display Total Marks */
+#total-score, #student-total-score, #exam-max-score {
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.struggling-questions {
+  color: red;
+  font-weight: bold;
+}
+
+/* Toast Notification Styles */
+#toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #28a745;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  display: none;
+}
+
+/* Student Buttons */
+.student-btn {
+  padding: 8px;
+  background-color: #e91e63;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 5px 0;
+  transition: background-color 0.3s ease;
+}
+
+.student-btn:hover {
+  background-color: #c2185b;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+  .exam-config, .grading-section {
+    padding: 15px;
+    margin: 15px;
+  }
+
+  input[type="number"], input[type="text"], input[type="email"] {
+    width: 100%;
+  }
+
+  button {
+    width: 100%;
+    padding: 15px;
+    font-size: 18px;
+  }
+
+  .student-btn {
+    width: 100%;
+    font-size: 18px;
+  }
+}
+
+    
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <ul class="nav-bar">
+        <li class="logo"><a href="index.html">EDGo Logo</a></li>
+        <div class="center-links">
+          <h1 class="glow-title">Grade Exam</h1>
+        </div>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="exam-config">
+      <h2>Configure Exam</h2>
+      <form id="exam-config-form">
+        <label>Number of Questions: <input type="number" id="num-questions" required></label>
+        <div id="question-configs"></div>
+        <div id="total-score">Total Marks: 0</div>
+        <div id="exam-max-score">Max Score: 0</div>
+        <button type="submit">Save Exam Structure</button>
+      </form>
+    </section>
+
+    <section class="grading-section" style="display:none">
+      <h2>Grade Students</h2>
+      <div id="student-list"></div>
+      <form id="grade-form" style="display:none">
+        <label>Student Email: <input type="email" id="student-email" required></label>
+        <div id="grading-inputs"></div>
+        <div id="student-total-score">Student Total Score: 0</div>
+        <div id="struggling-questions" class="struggling-questions"></div>
+        <button type="submit">Submit Grade</button>
+      </form>
+    </section>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getDatabase, ref, set, update, get } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD63qm0V0F0Y0PExzmmOCP9nJ7a6x1vCgs",
+      authDomain: "edora2.firebaseapp.com",
+      databaseURL: "https://edora2-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "edora2",
+      storageBucket: "edora2.firebasestorage.app",
+      messagingSenderId: "908106047332",
+      appId: "1:908106047332:web:4b412cd208e88fceb06471",
+      measurementId: "G-ELBKQDSSKC"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    let questionWeights = [];
+    let questionTopics = [];
+    let totalAvailableMarks = 0;
+
+    // Fixed list of topics
+    const fixedTopics = [
+      'Class', 'Interface', 'Inheritance', 'Encapsulation', 'Polymorphism', 'Constructor'
+    ];
+
+    // Function to handle exam configuration
+    document.getElementById("exam-config-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const numQuestions = parseInt(document.getElementById("num-questions").value);
+
+      if (numQuestions !== 6) {
+        alert("You must enter exactly 6 questions.");
+        return;
+      }
+
+      questionWeights = [];
+      questionTopics = [];
+      totalAvailableMarks = 0;
+
+      const qcDiv = document.getElementById("question-configs");
+      qcDiv.innerHTML = '';
+
+      // Fixed topics, no need for dynamic input
+      fixedTopics.forEach((topic, index) => {
+        qcDiv.innerHTML += `
+          <label>Question ${index + 1} Topic: ${topic}</label><br>
+          <label>Marks: <input type="number" id="qm-${index}" class="marks-input" required></label><br>
+        `;
+      });
+
+      // Update the total available marks when the marks inputs change
+      qcDiv.addEventListener("input", () => {
+        const inputs = document.querySelectorAll(".marks-input");
+        let total = 0;
+        inputs.forEach(input => {
+          total += parseFloat(input.value || 0);
+        });
+        document.getElementById("total-score").innerText = `Total Marks: ${total}`;
+        document.getElementById("exam-max-score").innerText = `Max Score: ${total}`;
+        totalAvailableMarks = total;
+      });
+
+      setTimeout(() => {
+        document.querySelector(".grading-section").style.display = "block";
+        document.getElementById("grading-inputs").innerHTML = '';
+
+        // Fixed topics for grading form
+        fixedTopics.forEach((topic, index) => {
+          document.getElementById("grading-inputs").innerHTML += `
+            <label>Mark for ${topic}: <input type="number" name="qmark-${index}" class="student-mark" required></label><br>
+          `;
+        });
+
+        document.getElementById("grading-inputs").addEventListener("input", () => {
+          const markInputs = document.querySelectorAll(".student-mark");
+          let score = 0;
+          markInputs.forEach(input => score += parseFloat(input.value || 0));
+          document.getElementById("student-total-score").innerText = `Student Total Score: ${score}`;
+        });
+      }, 100);
+
+      // Save the exam structure (including max score) to the database
+      const teacherId = auth.currentUser.uid;
+      const examRef = ref(db, `teachers/${teacherId}/examStructure`);
+      set(examRef, {
+        maxScore: totalAvailableMarks,
+        questions: questionWeights,
+      });
+    });
+
+    // Listen for authentication changes
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const teacherId = user.uid;
+        const studentsRef = ref(db, `teachers/${teacherId}/students`);
+        const snapshot = await get(studentsRef);
+
+        if (snapshot.exists()) {
+          const students = snapshot.val();
+          const studentListDiv = document.getElementById("student-list");
+          studentListDiv.innerHTML = '<h3>Students:</h3>';
+
+          for (const key in students) {
+            const student = students[key];
+            studentListDiv.innerHTML += `
+              <button class="student-btn" data-email="${student.email}">${student.email}</button><br>
+            `;
+          }
+
+          document.querySelectorAll('.student-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              document.getElementById("student-email").value = btn.getAttribute("data-email");
+              document.getElementById("grade-form").style.display = "block";
+            });
+          });
+        }
+      }
+    });
+
+    // Grading the student
+    // Grading the student
+document.getElementById("grade-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const studentEmail = document.getElementById("student-email").value;
+  const markInputs = document.querySelectorAll(".student-mark");
+
+  let total = 0;
+  const topicScores = {};
+
+  // Loop through each topic and grade
+  markInputs.forEach((input, index) => {
+    const mark = parseFloat(input.value);
+    const topic = fixedTopics[index] + "_label"; // Creating topic label (e.g., "Class_label")
+    topicScores[topic] = mark; // Store score for each topic
+    total += mark; // Accumulate total score
+  });
+
+  // Calculate percentage (ensure totalAvailableMarks is not 0)
+  const percentage = totalAvailableMarks > 0 ? (total / totalAvailableMarks) * 100 : 0;
+
+  const topics = fixedTopics;
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const teacherId = user.uid;
+      const studentKey = studentEmail.replace(/\./g, '_');
+
+      const studentRef = ref(db, `teachers/${teacherId}/students/${studentKey}`);
+      const globalStudentRef = ref(db, `students`);
+
+      // Update Firebase with the new structure
+      await update(studentRef, {
+        student_id: studentKey, // Store student_id
+        topic_scores: topicScores, // Store scores per topic
+        midtermScore: total, // Store the marks the student obtained
+        percentage: percentage, // Store the grade as percentage
+        totalScore: totalAvailableMarks, // Store the total available marks (max score)
+      });
+
+      const snapshot = await get(globalStudentRef);
+      if (snapshot.exists()) {
+        const allStudents = snapshot.val();
+        for (const key in allStudents) {
+          if (allStudents[key].email === studentEmail) {
+            const studentGlobalRef = ref(db, `students/${key}`);
+            await update(studentGlobalRef, {
+              student_id: studentKey,
+              topic_scores: topicScores,
+              midtermScore: total,
+              percentage: percentage,
+              totalScore: totalAvailableMarks,
+            });
+          }
+        }
+      }
+
+      alert("Grade submitted successfully!");
+    } else {
+      alert("You must be logged in as a teacher.");
+    }
+  });
+});
+
+  </script>
+</body>
+
+</html>
