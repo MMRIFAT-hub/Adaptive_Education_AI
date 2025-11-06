@@ -1,18 +1,16 @@
-# Rifat
 from utils.chatgpt_utils import generate_lesson, generate_quiz
 from utils.predictor import predict_student_levels
 import json
 from openai import OpenAI
-
 import os
 import firebase_admin
 from firebase_admin import credentials, db
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # Add this import
 import joblib
 import logging
 import numpy as np
 
-#Rifat
 # Initialize ChatGPT client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -24,6 +22,30 @@ firebase_admin.initialize_app(cred, {
 
 # Initialize Flask app
 app = Flask(__name__)
+
+# Configure CORS - Add this section
+CORS(app, resources={
+    r"/*": {
+        "origins": ["http://127.0.0.1:5500", "http://localhost:5500", "http://localhost:3000"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
+
+# Add CORS headers manually for OPTIONS requests
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', 'http://127.0.0.1:5500')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
+# Handle OPTIONS requests for CORS preflight
+@app.route('/predict_level', methods=['OPTIONS'])
+@app.route('/generate_chatgpt_content', methods=['OPTIONS'])
+@app.route('/chatbot', methods=['OPTIONS'])
+def options_response():
+    return '', 200
 
 # Load pre-trained models with error handling
 try:
@@ -314,7 +336,6 @@ def get_all_students():
         return jsonify({'error': str(e)}), 500
     
 
-#Rifat
 @app.route('/generate_chatgpt_content', methods=['POST'])
 def generate_chatgpt_content():
     try:
@@ -367,7 +388,6 @@ def generate_chatgpt_content():
         traceback.print_exc()
         return jsonify({'error': f'Failed to generate content: {str(e)}'}), 500
 
-#Rifat
 @app.route('/firebase_predict_levels', methods=['POST'])
 def firebase_predict_levels():
     try:
@@ -395,7 +415,6 @@ def firebase_predict_levels():
         return jsonify({'error': f'Failed to predict levels: {str(e)}'}), 500
 
 
-# Rifat
 @app.route('/chatbot', methods=['POST'])
 def chatbot():
     try:

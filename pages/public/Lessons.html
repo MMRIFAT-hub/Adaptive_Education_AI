@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Lessons</title>
+  <title>Personalized Lessons</title>
   <link rel="stylesheet" href="style.css" />
   <style>
     :root { --primary:#1a73e8; --primaryHover:#1559b4; --accent:#e91e63; }
@@ -23,15 +23,20 @@
     .accent { background: var(--accent); }
     #suggestion-container, #lesson-selection { margin: 18px 0 24px; }
     #lessons { margin-top: 10px; }
-    .mcq {
+    .lesson-content {
       margin: 14px 0; padding: 14px; border:1px solid #e6e8ee; border-radius: 10px;
       background:#fafbff;
     }
-    .mcq h4 { margin: 0 0 10px; }
-    .mcq ul { margin: 0 0 8px 20px; }
+    .lesson-content h4 { margin: 0 0 10px; }
+    .quiz-content {
+      margin: 14px 0; padding: 14px; border:1px solid #e6e8ee; border-radius: 10px;
+      background:#f9f5ff;
+    }
+    .quiz-content h4 { margin: 0 0 10px; }
     .status { text-align:center; font-size: 16px; padding: 10px; }
     .muted { color:#6b7280; }
     .error { color:#b00020; }
+    .success { color:#0d8a00; }
     .loader {
       width: 36px; height: 36px; border-radius: 50%;
       border: 4px solid #e5e7eb; border-top-color: var(--primary);
@@ -39,7 +44,80 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     .toolbar { display:flex; justify-content:center; gap:10px; margin: 10px 0 20px; }
-    select { padding: 8px 12px; border-radius: 8px; border:1px solid #d1d5db; }
+    .level-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+    .level-1 { background: #e8f5e8; color: #2e7d32; }
+    .level-2 { background: #fff3e0; color: #ef6c00; }
+    .level-3 { background: #ffebee; color: #c62828; }
+    .topic-card {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 10px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .quiz-question {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 10px 0;
+    }
+    .quiz-option {
+      padding: 8px 12px;
+      margin: 5px 0;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .quiz-option:hover {
+      background: #f5f5f5;
+    }
+    .correct-answer {
+      background: #e8f5e8;
+      border-color: #4caf50;
+    }
+    .chatbot-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 350px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      z-index: 1000;
+    }
+    .chatbot-header {
+      background: var(--primary);
+      color: white;
+      padding: 15px;
+      border-radius: 10px 10px 0 0;
+      cursor: pointer;
+    }
+    .chatbot-messages {
+      height: 300px;
+      overflow-y: auto;
+      padding: 15px;
+    }
+    .chatbot-input {
+      display: flex;
+      padding: 15px;
+      border-top: 1px solid #e0e0e0;
+    }
+    .chatbot-input input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      margin-right: 10px;
+    }
   </style>
 
   <!-- Firebase v9 compat SDKs -->
@@ -48,7 +126,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
   <script>
-    // 🔧 Replace with your Firebase config
+    // 🔧 Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyD63qm0V0F0Y0PExzmmOCP9nJ7a6x1vCgs",
       authDomain: "edora2.firebaseapp.com",
@@ -63,8 +141,8 @@
     const auth = firebase.auth();
     const db   = firebase.database();
 
-    // 🔌 Your backend that calls GPT (Flask/Node etc.)
-    const SERVER_URL = 'http://localhost:5000';  // Make sure it's 5000, not 3000
+    // 🔌 Your Flask backend
+    const SERVER_URL = 'http://localhost:5000';
 
   </script>
 </head>
@@ -73,7 +151,7 @@
     <nav>
       <ul class="nav-bar">
         <li class="logo"><a href="homeStudent.html">EDGo Logo</a></li>
-        <div class="center-links"><h1 class="glow-title">Lessons</h1></div>
+        <div class="center-links"><h1 class="glow-title">Personalized Lessons</h1></div>
       </ul>
       <a href="index.html" class="home" title="Home"></a>
       <a href="personalInfo.html" class="profile-icon" title="Profile"></a>
@@ -83,134 +161,132 @@
 
   <main>
     <div id="lesson-container">
-      <h2>Get Targeted Lessons From Your Struggles</h2>
+      <h2>Personalized Lessons Based on Your Proficiency Level</h2>
 
-      <!-- Recommended topics (from strugglingQuestions) -->
+      <!-- Student proficiency overview -->
+      <div id="proficiency-container" style="display:none;">
+        <h3>Your Current Proficiency Levels</h3>
+        <div id="proficiency-levels" class="row"></div>
+      </div>
+
+      <!-- Recommended topics based on proficiency -->
       <div id="suggestion-container" style="display:none;">
-        <h3>Recommended For You</h3>
+        <h3>Recommended Topics For You</h3>
         <div id="suggested-topics" class="row"></div>
       </div>
 
-      <!-- All parsed topics as selectable chips -->
+      <!-- All OOP topics -->
       <div id="lesson-selection" style="display:none;">
+        <h3>All Topics</h3>
         <div class="row" id="topic-chips"></div>
       </div>
 
-      <!-- Level / Regenerate toolbar -->
+      <!-- Regenerate toolbar -->
       <div class="toolbar" id="toolbar" style="display:none;">
-        <label>
-          <span class="muted">Difficulty:</span>
-          <select id="level">
-            <option>Level 1</option>
-            <option>Level 2</option>
-            <option>Level 3</option>
-          </select>
-        </label>
-        <button id="regen" class="lesson-button chip">Regenerate</button>
+        <button id="regen" class="lesson-button chip">Regenerate Content</button>
+        <button id="chatbot-toggle" class="lesson-button accent">Ask AI Assistant</button>
       </div>
 
-      <!-- Rendered lessons/MCQs -->
+      <!-- Rendered lessons and quizzes -->
       <div id="lessons"></div>
     </div>
   </main>
 
+  <!-- Chatbot Interface -->
+  <div id="chatbot" class="chatbot-container" style="display:none;">
+    <div class="chatbot-header" onclick="toggleChatbot()">
+      <strong>AI Learning Assistant</strong> (Click to minimize)
+    </div>
+    <div class="chatbot-messages" id="chatbot-messages">
+      <div class="status muted">Hello! I'm your AI assistant. How can I help you with your lessons today?</div>
+    </div>
+    <div class="chatbot-input">
+      <input type="text" id="chatbot-input" placeholder="Ask a question about your lessons..." onkeypress="handleChatbotKeypress(event)">
+      <button class="lesson-button" onclick="sendChatbotMessage()">Send</button>
+    </div>
+  </div>
+
   <script>
+    // ---------- Global variables ----------
+    let currentPredictions = {};
+    let currentStudentId = '';
+    let isChatbotOpen = false;
+
     // ---------- Helpers ----------
     function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
-
-    function cleanTopic(raw) {
-      if (raw == null) return null;
-      const str = String(raw);
-      // Examples we handle:
-      // "Topic: Inheritance - Q3" -> "Inheritance"
-      // "Polymorphism – MCQ 2" -> "Polymorphism"
-      // "Arrays/List Q4" -> "Arrays/List"
-      let t = str;
-      const colon = t.indexOf(':');
-      if (colon !== -1) t = t.slice(colon + 1);
-      const dash = t.indexOf('-');
-      const enDash = t.indexOf('–');
-      const cut = [dash, enDash].filter(i => i !== -1);
-      if (cut.length) t = t.slice(0, Math.min(...cut));
-      // Strip trailing tokens like "Q3", "MCQ 2"
-      t = t.replace(/\b(q\d+|mcq\s*\d+)\b/gi, '');
-      return t.trim();
-    }
-
-    function uniqueNonEmpty(arr) {
-      const set = new Set();
-      const out = [];
-      for (const x of arr) {
-        const v = (x || '').trim();
-        if (v && !set.has(v.toLowerCase())) {
-          set.add(v.toLowerCase());
-          out.push(v);
-        }
-      }
-      return out;
-    }
 
     function statusEl(html, cls='muted') {
       return `<div class="status ${cls}">${html}</div>`;
     }
 
-    function showLoader(msg="Generating…") {
+    function showLoader(msg="Loading…") {
       return `<div class="status"><div class="loader"></div><div>${msg}</div></div>`;
     }
 
-    // ---------- Server (GPT) ----------
-    async function fetchMCQs(topic, level = 'Level 1') {
-      const res = await fetch(`${SERVER_URL}/generate_questions`, {
+    // ---------- Server (Backend API) ----------
+    async function predictStudentLevels(studentId) {
+      const res = await fetch(`${SERVER_URL}/predict_level`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, level })
+        body: JSON.stringify({ student_id: studentId })
       });
       if (!res.ok) {
         const txt = await res.text().catch(() => '');
-        throw new Error(`AI error ${res.status}: ${txt || res.statusText}`);
+        throw new Error(`Prediction error ${res.status}: ${txt || res.statusText}`);
       }
       const data = await res.json();
-      // Expecting shape: { MCQ: [{question, options[], answer}, ...] }
-      return data?.MCQ || [];
+      return data.predictions; // Your backend returns { predictions: {...} }
     }
 
-    function displayMCQs(questions, topic) {
-      const container = document.getElementById('lessons');
-      if (!Array.isArray(questions) || !questions.length) {
-        container.innerHTML = statusEl('No questions generated. Try Regenerate.', 'muted');
-        return;
+    async function generatePersonalizedContent(studentId, predictions) {
+      const res = await fetch(`${SERVER_URL}/generate_chatgpt_content`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          student_id: studentId,
+          predicted_levels: predictions
+        })
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => '');
+        throw new Error(`Content generation error ${res.status}: ${txt || res.statusText}`);
       }
-      container.innerHTML = `
-        <h3 style="text-align:center;margin:6px 0 10px;">${capitalize(topic)} — Practice Set</h3>
-        ${questions.map((q, i) => `
-          <div class="mcq">
-            <h4>${i + 1}. ${q.question || ''}</h4>
-            ${Array.isArray(q.options) && q.options.length ? `
-              <ul>${q.options.map(o => `<li>${o}</li>`).join('')}</ul>` : ''}
-            ${q.explanation ? `<p><em>${q.explanation}</em></p>` : ''}
-            ${q.answer ? `<p><strong>Answer:</strong> ${q.answer}</p>` : ''}
-          </div>
-        `).join('')}
-      `;
+      return await res.json();
     }
 
-    async function loadLessons(topic) {
-      const container = document.getElementById('lessons');
-      const level = document.getElementById('level')?.value || 'Level 1';
-      container.innerHTML = showLoader(`Generating ${capitalize(topic)} (${level})…`);
-      try {
-        const mcqs = await fetchMCQs(topic, level);
-        displayMCQs(mcqs, topic);
-        // Remember currently selected topic for "Regenerate"
-        container.dataset.currentTopic = topic;
-      } catch (err) {
-        console.error(err);
-        container.innerHTML = statusEl('Failed to generate content. Please try again.', 'error');
+    // ---------- UI Rendering ----------
+    function renderProficiencyLevels(predictions) {
+      const container = document.getElementById('proficiency-levels');
+      container.innerHTML = '';
+      
+      Object.entries(predictions).forEach(([topic, level]) => {
+        if (level !== null && level !== undefined) {
+          const levelDiv = document.createElement('div');
+          levelDiv.className = 'topic-card';
+          levelDiv.innerHTML = `
+            <strong>${capitalize(topic)}</strong>
+            <span class="level-badge level-${level}">Level ${level}</span>
+            <div class="muted" style="font-size: 12px; margin-top: 5px;">
+              ${getLevelDescription(level)}
+            </div>
+          `;
+          container.appendChild(levelDiv);
+        }
+      });
+      
+      document.getElementById('proficiency-container').style.display = '';
+    }
+
+    function getLevelDescription(level) {
+      switch(level) {
+        case 1: return 'Beginner - Basic concepts';
+        case 2: return 'Intermediate - Some understanding';
+        case 3: return 'Advanced - Strong grasp';
+        default: return 'Not assessed';
       }
     }
 
-    // ---------- UI wiring ----------
-    function renderTopicButtons(topics) {
+    function renderTopicButtons(predictions) {
       const sugg = document.getElementById('suggestion-container');
       const suggBox = document.getElementById('suggested-topics');
       const chipsRow = document.getElementById('topic-chips');
@@ -219,91 +295,321 @@
       suggBox.innerHTML = '';
       chipsRow.innerHTML = '';
 
-      topics.forEach((t, idx) => {
-        // Top row: accent for emphasis
-        const b1 = document.createElement('button');
-        b1.className = 'lesson-button accent';
-        b1.textContent = capitalize(t);
-        b1.addEventListener('click', () => {
-          toolbar.style.display = '';
-          loadLessons(t);
-        });
-        suggBox.appendChild(b1);
-
-        // Chips row (secondary)
-        const b2 = document.createElement('button');
-        b2.className = 'lesson-button chip';
-        b2.textContent = capitalize(t);
-        b2.addEventListener('click', () => {
-          toolbar.style.display = '';
-          loadLessons(t);
-        });
-        chipsRow.appendChild(b2);
+      // Define all OOP topics (matching your backend)
+      const allTopics = ['Constructor', 'Encapsulation', 'Inheritance', 'Interface', 'Polymorphism'];
+      
+      // Sort topics by level (lower levels first for recommendations)
+      const sortedTopics = [...allTopics].sort((a, b) => {
+        return (predictions[a] || 3) - (predictions[b] || 3);
       });
 
-      if (topics.length) {
-        sugg.style.display = '';
+      // Recommended topics (lower proficiency levels)
+      sortedTopics.forEach(topic => {
+        const level = predictions[topic] || 1;
+        if (level <= 2) { // Recommend topics where level is 1 or 2
+          const button = document.createElement('button');
+          button.className = 'lesson-button accent';
+          button.innerHTML = `${capitalize(topic)} <span class="level-badge level-${level}">${level}</span>`;
+          button.addEventListener('click', () => loadTopicContent(topic));
+          suggBox.appendChild(button);
+        }
+      });
+
+      // All topics
+      allTopics.forEach(topic => {
+        const level = predictions[topic] || 1;
+        const button = document.createElement('button');
+        button.className = 'lesson-button chip';
+        button.innerHTML = `${capitalize(topic)} <span class="level-badge level-${level}">${level}</span>`;
+        button.addEventListener('click', () => loadTopicContent(topic));
+        chipsRow.appendChild(button);
+      });
+
+      if (allTopics.length) {
+        sugg.style.display = sortedTopics.some(t => (predictions[t] || 3) <= 2) ? '' : 'none';
         document.getElementById('lesson-selection').style.display = '';
         toolbar.style.display = '';
-      } else {
-        sugg.style.display = 'none';
-        document.getElementById('lesson-selection').style.display = 'none';
-        toolbar.style.display = 'none';
       }
     }
 
+    function displayLessonContent(content, topic) {
+      const container = document.getElementById('lessons');
+      
+      if (!content || !content[topic]) {
+        container.innerHTML = statusEl(`No content generated for ${topic}.`, 'error');
+        return;
+      }
+
+      const topicContent = content[topic];
+      container.innerHTML = `
+        <h3 style="text-align:center;margin:6px 0 10px;">
+          ${capitalize(topic)} - Level ${topicContent.level}
+        </h3>
+        
+        <div class="lesson-content">
+          <h4>📚 Lesson Content</h4>
+          <div>${formatContent(topicContent.lesson)}</div>
+        </div>
+        
+        <div class="quiz-content">
+          <h4>🧠 Practice Quiz</h4>
+          <div>${formatQuiz(topicContent.quiz)}</div>
+        </div>
+      `;
+      
+      // Remember currently selected topic for "Regenerate"
+      container.dataset.currentTopic = topic;
+    }
+
+    function formatContent(content) {
+      if (typeof content === 'string') {
+        // Convert markdown-like formatting to HTML
+        return content
+          .split('\n')
+          .map(line => {
+            if (line.startsWith('# ')) return `<h4>${line.substring(2)}</h4>`;
+            if (line.startsWith('## ')) return `<h5>${line.substring(3)}</h5>`;
+            if (line.startsWith('- ') || line.startsWith('* ')) return `<li>${line.substring(2)}</li>`;
+            if (line.trim() === '') return '<br>';
+            return `<p>${line}</p>`;
+          })
+          .join('');
+      }
+      return content;
+    }
+
+    function formatQuiz(quizData) {
+      if (typeof quizData === 'string') {
+        return formatContent(quizData);
+      } else if (quizData && quizData.questions && Array.isArray(quizData.questions)) {
+        return quizData.questions.map((question, index) => `
+          <div class="quiz-question">
+            <p><strong>Question ${index + 1}:</strong> ${question.question}</p>
+            <div class="quiz-options">
+              ${question.options ? question.options.map((option, optIndex) => `
+                <div class="quiz-option ${optIndex === question.correct_answer ? 'correct-answer' : ''}">
+                  ${String.fromCharCode(65 + optIndex)}. ${option}
+                </div>
+              `).join('') : ''}
+            </div>
+            ${question.explanation ? `<p><strong>Explanation:</strong> ${question.explanation}</p>` : ''}
+          </div>
+        `).join('');
+      } else {
+        return '<p>Quiz content not available in expected format.</p>';
+      }
+    }
+
+    async function loadTopicContent(topic) {
+      const container = document.getElementById('lessons');
+      const user = auth.currentUser;
+      
+      if (!user) {
+        container.innerHTML = statusEl('Please sign in to view lessons.', 'muted');
+        return;
+      }
+
+      container.innerHTML = showLoader(`Loading personalized content for ${capitalize(topic)}…`);
+
+      try {
+        // First, check if we already have generated content in Firebase
+        const generatedContent = await getGeneratedContent(user.uid);
+        
+        if (generatedContent && generatedContent[topic]) {
+          displayLessonContent(generatedContent, topic);
+        } else {
+          // If no content exists, generate it
+          container.innerHTML = showLoader(`Generating personalized content for ${capitalize(topic)}…`);
+          await generateAndDisplayContent(topic);
+        }
+      } catch (err) {
+        console.error(err);
+        container.innerHTML = statusEl('Failed to load content. Please try again.', 'error');
+      }
+    }
+
+    async function generateAndDisplayContent(topic) {
+      const user = auth.currentUser;
+      
+      // Generate content for all predicted topics using your backend
+      const response = await generatePersonalizedContent(user.email, currentPredictions);
+      
+      if (response.status === 'success') {
+        // Content is now saved in Firebase, fetch it
+        const generatedContent = await getGeneratedContent(user.uid);
+        displayLessonContent(generatedContent, topic);
+      } else {
+        throw new Error(response.error || 'Failed to generate content');
+      }
+    }
+
+    async function getGeneratedContent(uid) {
+      const snap = await db.ref(`students/${uid}/generated_content`).get();
+      return snap.val();
+    }
+
+    // ---------- Chatbot Functions ----------
+    function toggleChatbot() {
+      const chatbot = document.getElementById('chatbot');
+      isChatbotOpen = !isChatbotOpen;
+      chatbot.style.display = isChatbotOpen ? 'block' : 'none';
+    }
+
+    function handleChatbotKeypress(event) {
+      if (event.key === 'Enter') {
+        sendChatbotMessage();
+      }
+    }
+
+    async function sendChatbotMessage() {
+      const input = document.getElementById('chatbot-input');
+      const message = input.value.trim();
+      const messagesContainer = document.getElementById('chatbot-messages');
+      
+      if (!message) return;
+
+      // Add user message
+      messagesContainer.innerHTML += `
+        <div style="text-align: right; margin: 10px 0;">
+          <div style="background: #1a73e8; color: white; padding: 10px; border-radius: 10px; display: inline-block;">
+            ${message}
+          </div>
+        </div>
+      `;
+
+      input.value = '';
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+      // Show loading
+      messagesContainer.innerHTML += `
+        <div class="status muted">
+          <div class="loader" style="width: 20px; height: 20px;"></div>
+          AI is thinking...
+        </div>
+      `;
+
+      try {
+        const user = auth.currentUser;
+        if (!user) throw new Error('Please sign in to use the chatbot');
+
+        const response = await fetch(`${SERVER_URL}/chatbot`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            student_id: user.email,
+            message: message
+          })
+        });
+
+        if (!response.ok) throw new Error('Failed to get response from AI');
+
+        const data = await response.json();
+        
+        // Remove loading message
+        messagesContainer.innerHTML = messagesContainer.innerHTML.replace(
+          /<div class="status muted">[\s\S]*?AI is thinking...<\/div>/, ''
+        );
+
+        // Add AI response
+        messagesContainer.innerHTML += `
+          <div style="text-align: left; margin: 10px 0;">
+            <div style="background: #f1f3f4; color: #333; padding: 10px; border-radius: 10px; display: inline-block;">
+              ${data.response}
+            </div>
+          </div>
+        `;
+
+      } catch (error) {
+        console.error('Chatbot error:', error);
+        messagesContainer.innerHTML = messagesContainer.innerHTML.replace(
+          /<div class="status muted">[\s\S]*?AI is thinking...<\/div>/, ''
+        );
+        messagesContainer.innerHTML += `
+          <div class="status error">
+            Sorry, I couldn't process your request. Please try again.
+          </div>
+        `;
+      }
+
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // ---------- UI wiring ----------
     function wireToolbar() {
       const regen = document.getElementById('regen');
-      regen.addEventListener('click', () => {
+      const chatbotToggle = document.getElementById('chatbot-toggle');
+
+      regen.addEventListener('click', async () => {
         const container = document.getElementById('lessons');
         const topic = container.dataset.currentTopic;
         if (!topic) return;
-        loadLessons(topic); // same topic, new generation
+        
+        container.innerHTML = showLoader(`Regenerating content for ${capitalize(topic)}…`);
+        try {
+          await generateAndDisplayContent(topic);
+          container.innerHTML += statusEl('Content regenerated successfully!', 'success');
+        } catch (err) {
+          console.error(err);
+          container.innerHTML = statusEl('Failed to regenerate content.', 'error');
+        }
       });
-      const levelSel = document.getElementById('level');
-      levelSel.addEventListener('change', () => {
-        const container = document.getElementById('lessons');
-        const topic = container.dataset.currentTopic;
-        if (topic) loadLessons(topic);
-      });
+
+      chatbotToggle.addEventListener('click', toggleChatbot);
     }
 
-    // ---------- Data fetch from Firebase ----------
-    async function getStrugglingTopics(uid) {
-      // Accept array OR object forms gracefully
-      const snap = await db.ref(`students/${uid}/strugglingQuestions`).get();
-      const raw = snap.val();
-      if (!raw) return [];
-      const arr = Array.isArray(raw) ? raw : Object.values(raw);
-      const cleaned = arr.map(cleanTopic).filter(Boolean);
-      return uniqueNonEmpty(cleaned);
+    // ---------- Data fetch and processing ----------
+    async function getStudentProficiency(uid, email) {
+      try {
+        const predictions = await predictStudentLevels(email);
+        return predictions; // Your backend returns the predictions object directly
+      } catch (error) {
+        console.error('Error getting proficiency:', error);
+        throw error;
+      }
     }
 
     // ---------- App start ----------
     auth.onAuthStateChanged(async (user) => {
-      const lessons = document.getElementById('lessons');
+      const container = document.getElementById('lessons');
+      
       if (!user) {
-        lessons.innerHTML = statusEl('Please sign in to view your recommended lessons.', 'muted');
+        container.innerHTML = statusEl('Please sign in to view your personalized lessons.', 'muted');
         return;
       }
 
-      lessons.innerHTML = showLoader('Loading your struggling topics…');
+      container.innerHTML = showLoader('Analyzing your proficiency levels…');
+      currentStudentId = user.email;
+
       try {
-        const topics = await getStrugglingTopics(user.uid);
-        if (!topics.length) {
-          lessons.innerHTML = statusEl('No struggling topics found yet. Attempt some quizzes first!', 'muted');
+        // Get student proficiency predictions
+        currentPredictions = await getStudentProficiency(user.uid, user.email);
+        
+        if (!currentPredictions) {
+          container.innerHTML = statusEl('Could not determine your proficiency levels.', 'error');
           return;
         }
 
-        renderTopicButtons(topics);
+        // Render proficiency overview and topic buttons
+        renderProficiencyLevels(currentPredictions);
+        renderTopicButtons(currentPredictions);
         wireToolbar();
 
-        // Auto-load first topic for convenience
-        const first = topics[0];
-        if (first) loadLessons(first);
-      } catch (e) {
-        console.error(e);
-        lessons.innerHTML = statusEl('Could not load your struggling topics.', 'error');
+        // Auto-load first recommended topic
+        const recommendedTopics = Object.keys(currentPredictions).filter(
+          topic => currentPredictions[topic] <= 2
+        );
+        
+        if (recommendedTopics.length > 0) {
+          loadTopicContent(recommendedTopics[0]);
+        } else {
+          // If no specific recommendations, load first topic
+          const firstTopic = Object.keys(currentPredictions)[0];
+          if (firstTopic) loadTopicContent(firstTopic);
+        }
+
+      } catch (error) {
+        console.error(error);
+        container.innerHTML = statusEl('Error loading your data. Please try again later.', 'error');
       }
     });
   </script>
