@@ -846,7 +846,7 @@
             });
         }
 
-        // Extract questions from content (existing function)
+        // Extract questions from content - UPDATED TO ALIGN WITH DATASET
         function extractQuestionsFromContent(generatedContent) {
             const questions = [];
             
@@ -855,77 +855,105 @@
             // Get all topics from generated_content
             const topics = Object.keys(generatedContent);
             
-            // For each topic, extract questions from the quiz string
+            // Map quiz levels to our app levels
+            const levelMapping = {
+                "Level 1": 0, // Beginner topics (level 0 in dataset)
+                "Level 2": 1, // Intermediate topics (level 1 in dataset)  
+                "Level 3": 2  // Advanced topics (level 2 in dataset)
+            };
+            
+            const targetLevel = levelMapping[currentLevel];
+            
+            console.log(`Extracting questions for ${currentLevel}, looking for topics with level ${targetLevel}`);
+            
+            // For each topic, extract questions only if it matches the current level
             topics.forEach(topic => {
                 const topicData = generatedContent[topic];
-                if (topicData.quiz && typeof topicData.quiz === 'string') {
+                if (topicData.level === targetLevel && topicData.quiz && typeof topicData.quiz === 'string') {
+                    console.log(`Found matching topic: ${topic} with level ${topicData.level}`);
                     const topicQuestions = parseQuizString(topicData.quiz);
                     questions.push(...topicQuestions);
                 }
             });
             
-            // Return questions (limit to 5 per level)
-            return questions.slice(0, 5);
+            console.log(`Extracted ${questions.length} questions for ${currentLevel}`);
+            
+            // Return questions (limit to 3 per level)
+            return questions.slice(0, 3);
         }
 
-        // Parse quiz string from Firebase format (existing function)
+        // Parse quiz string from Firebase format - IMPROVED PARSING
         function parseQuizString(quizString) {
             const questions = [];
             
-            // Split the quiz string into individual questions
-            const questionBlocks = quizString.split(/Question \d+:/).filter(block => block.trim() !== '');
-            
-            questionBlocks.forEach(block => {
-                try {
-                    const question = parseSingleQuestion(block);
-                    if (question) {
-                        questions.push(question);
-                    }
-                } catch (error) {
-                    console.error("Error parsing question block:", error);
+            if (!quizString) return questions;
+
+            try {
+                // Split by "Question X:" pattern
+                const questionBlocks = quizString.split(/\n\nQuestion \d+:/);
+                
+                // Handle first question (doesn't start with "Question X:")
+                if (quizString.startsWith("Question ")) {
+                    // Remove the first "Question X:" prefix for the first block
+                    questionBlocks[0] = questionBlocks[0].replace(/^Question \d+:\s*/, '');
                 }
-            });
+                
+                questionBlocks.forEach(block => {
+                    if (block.trim()) {
+                        const question = parseSingleQuestion(block.trim());
+                        if (question) {
+                            questions.push(question);
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Error parsing quiz string:", error);
+            }
             
             return questions;
         }
 
-        // Parse a single question from the quiz string (existing function)
+        // Parse a single question from the quiz string - IMPROVED PARSING
         function parseSingleQuestion(questionBlock) {
-            const lines = questionBlock.split('\n').filter(line => line.trim() !== '');
-            
-            if (lines.length < 3) return null;
-            
-            // The first line is the question text
-            const questionText = lines[0].trim();
-            
-            // Find options (lines that start with A), B), C), D))
-            const options = [];
-            let correctAnswer = null;
-            
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
+            try {
+                const lines = questionBlock.split('\n').filter(line => line.trim() !== '');
                 
-                // Check if this is an option line
-                if (line.match(/^[A-D]\)/)) {
-                    options.push(line);
-                }
-                // Check if this is the answer line
-                else if (line.includes('Correct Answer:')) {
-                    // Extract the correct answer letter
-                    const match = line.match(/Correct Answer:\s*([A-D])/);
-                    if (match) {
-                        correctAnswer = match[1];
+                if (lines.length < 3) return null;
+                
+                // The first line is the question text
+                const questionText = lines[0].trim();
+                
+                // Find options (lines that start with A), B), C), D))
+                const options = [];
+                let correctAnswer = null;
+                
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    
+                    // Check if this is an option line
+                    if (line.match(/^[A-D]\)/)) {
+                        options.push(line);
+                    }
+                    // Check if this is the answer line
+                    else if (line.includes('Correct Answer:') || line.includes('-[Correct Answer:')) {
+                        // Extract the correct answer letter
+                        const match = line.match(/Correct Answer:\s*([A-D])/i);
+                        if (match) {
+                            correctAnswer = match[1].toUpperCase();
+                        }
                     }
                 }
-            }
-            
-            // If we have a question, options, and correct answer, create the question object
-            if (questionText && options.length >= 2 && correctAnswer) {
-                return {
-                    question: questionText,
-                    options: options,
-                    answer: correctAnswer
-                };
+                
+                // If we have a question, options, and correct answer, create the question object
+                if (questionText && options.length >= 2 && correctAnswer) {
+                    return {
+                        question: questionText,
+                        options: options,
+                        answer: correctAnswer
+                    };
+                }
+            } catch (error) {
+                console.error("Error parsing single question:", error);
             }
             
             return null;
@@ -1117,10 +1145,11 @@
             document.getElementById('final-score').textContent = `${percentage}%`;
             document.getElementById('progress-bar').style.width = `${percentage}%`;
 
-            if (percentage >= 80 && !isRetaking) {
+            if (percentage >= 80) {
                 document.getElementById('result-message').textContent = 
                     "Excellent! You've mastered this level!";
-                unlockNextLevel();
+                // Always unlock the current level if score is >= 80%
+                markLevelCompleted();
             } else if (percentage >= 60) {
                 document.getElementById('result-message').textContent = 
                     "Good job! Review the material and try again!";
@@ -1130,27 +1159,14 @@
             }
         }
 
-        // Unlock the next level in Firebase (existing function)
-        function unlockNextLevel() {
+        // Mark the current level as completed in Firebase
+        function markLevelCompleted() {
             const currentLevelNum = parseInt(currentLevel.split(' ')[1]);
             const index = currentLevelNum - 1;
-
-            // Only unlock if this is not a retake
-            if (!isRetaking) {
-                // Update Firebase to mark this level as completed
+            
+            // Only mark as completed if not already completed (to avoid overwriting)
+            if (!completedLevels[index]) {
                 setLevelCompleted(index);
-
-                // Unlock the next level if not the last level
-                if (currentLevelNum < 3) {
-                    const nextLevel = currentLevelNum + 1;
-                    const nextButton = document.getElementById(`level-${nextLevel}`);
-
-                    // Only unlock if not already completed
-                    if (!completedLevels[nextLevel - 1]) {
-                        nextButton.disabled = false;
-                        nextButton.innerHTML = `<i class="fas fa-lock-open"></i> Level ${nextLevel}: ${nextLevel === 2 ? 'Intermediate' : 'Advanced'}`;
-                    }
-                }
             }
         }
 

@@ -318,71 +318,80 @@ button:hover {
       }
     });
 
-    // Grading the student
-    // Grading the student
-document.getElementById("grade-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const studentEmail = document.getElementById("student-email").value;
-  const markInputs = document.querySelectorAll(".student-mark");
+    // Grading the student - UPDATED VERSION
+    document.getElementById("grade-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const studentEmail = document.getElementById("student-email").value;
+      const markInputs = document.querySelectorAll(".student-mark");
 
-  let total = 0;
-  const topicScores = {};
+      let total = 0;
+      const topicScores = {};
 
-  // Loop through each topic and grade
-  markInputs.forEach((input, index) => {
-    const mark = parseFloat(input.value);
-    const topic = fixedTopics[index] + "_label"; // Creating topic label (e.g., "Class_label")
-    topicScores[topic] = mark; // Store score for each topic
-    total += mark; // Accumulate total score
-  });
-
-  // Calculate percentage (ensure totalAvailableMarks is not 0)
-  const percentage = totalAvailableMarks > 0 ? (total / totalAvailableMarks) * 100 : 0;
-
-  const topics = fixedTopics;
-
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      const teacherId = user.uid;
-      const studentKey = studentEmail.replace(/\./g, '_');
-
-      const studentRef = ref(db, `teachers/${teacherId}/students/${studentKey}`);
-      const globalStudentRef = ref(db, `students`);
-
-      // Update Firebase with the new structure
-      await update(studentRef, {
-        student_id: studentKey, // Store student_id
-        topic_scores: topicScores, // Store scores per topic
-        midtermScore: total, // Store the marks the student obtained
-        percentage: percentage, // Store the grade as percentage
-        totalScore: totalAvailableMarks, // Store the total available marks (max score)
+      // Get the maximum marks for each topic from the exam configuration
+      const maxMarks = [];
+      fixedTopics.forEach((topic, index) => {
+        const maxMarkInput = document.getElementById(`qm-${index}`);
+        const maxMark = parseFloat(maxMarkInput.value) || 1; // Default to 1 to avoid division by zero
+        maxMarks.push(maxMark);
       });
 
-      const snapshot = await get(globalStudentRef);
-      if (snapshot.exists()) {
-        const allStudents = snapshot.val();
-        for (const key in allStudents) {
-          if (allStudents[key].email === studentEmail) {
-            const studentGlobalRef = ref(db, `students/${key}`);
-            await update(studentGlobalRef, {
-              student_id: studentKey,
-              topic_scores: topicScores,
-              midtermScore: total,
-              percentage: percentage,
-              totalScore: totalAvailableMarks,
-            });
+      // Loop through each topic and calculate percentage
+      markInputs.forEach((input, index) => {
+        const mark = parseFloat(input.value);
+        const maxMark = maxMarks[index];
+        const topic = fixedTopics[index] + "_label";
+        
+        // Calculate percentage for this topic
+        const topicPercentage = (mark / maxMark) * 100;
+        topicScores[topic] = topicPercentage; // Store as percentage
+        
+        total += mark; // Accumulate total raw score
+      });
+
+      // Calculate overall percentage
+      const overallPercentage = totalAvailableMarks > 0 ? (total / totalAvailableMarks) * 100 : 0;
+
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          const teacherId = user.uid;
+          const studentKey = studentEmail.replace(/\./g, '_');
+
+          const studentRef = ref(db, `teachers/${teacherId}/students/${studentKey}`);
+          const globalStudentRef = ref(db, `students`);
+
+          // Update Firebase with the new structure (topic scores as percentages)
+          await update(studentRef, {
+            student_id: studentKey,
+            topic_scores: topicScores, // Now stores percentages for each topic
+            midtermScore: total, // Store the raw total marks obtained
+            percentage: overallPercentage, // Store overall percentage
+            totalScore: totalAvailableMarks, // Store the total available marks
+          });
+
+          // Also update in the global students node
+          const snapshot = await get(globalStudentRef);
+          if (snapshot.exists()) {
+            const allStudents = snapshot.val();
+            for (const key in allStudents) {
+              if (allStudents[key].email === studentEmail) {
+                const studentGlobalRef = ref(db, `students/${key}`);
+                await update(studentGlobalRef, {
+                  student_id: studentKey,
+                  topic_scores: topicScores, // Percentages for each topic
+                  midtermScore: total,
+                  percentage: overallPercentage,
+                  totalScore: totalAvailableMarks,
+                });
+              }
+            }
           }
+
+          alert("Grade submitted successfully! Topics stored as percentages.");
+        } else {
+          alert("You must be logged in as a teacher.");
         }
-      }
-
-      alert("Grade submitted successfully!");
-    } else {
-      alert("You must be logged in as a teacher.");
-    }
-  });
-});
-
+      });
+    });
   </script>
 </body>
-
 </html>

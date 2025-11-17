@@ -135,7 +135,7 @@
         });
     });
 
-    // 🔐 SIGN IN
+    // 🔐 SIGN IN - FIXED VERSION
     document.getElementById("signin-form").addEventListener("submit", function (e) {
       e.preventDefault();
       const email = e.target.email.value;
@@ -147,28 +147,52 @@
           const user = userCredential.user;
           const uid = user.uid; // Firebase-generated UID
 
-          // Store the role in localStorage when signing in
-          localStorage.setItem("role", selectedRole);
+          // Check both student and teacher nodes to find where the user exists
+          const studentRef = db.ref(`students/${uid}`);
+          const teacherRef = db.ref(`teachers/${uid}`);
 
-          // Determine which node to access (students or teachers) based on the role
-          const dbRef = db.ref(`${selectedRole}s/${uid}`);
-          dbRef.once("value")
-            .then((snapshot) => {
-              if (snapshot.exists()) {
-                const userData = snapshot.val();
-                if (!userData.completedLevels) {
-                  // If completedLevels is not set, initialize it
-                  dbRef.update({
-                    completedLevels: [false, false, false]
-                  });
-                }
-                alert("Login successful!");
-                const targetPage = selectedRole === "student" ? "homeStudent.html" : "teacherDashboard.html";
-                window.location.href = targetPage;
-              } else {
-                alert("Role does not match. Please select the correct role.");
-                auth.signOut();
+          // Check both locations
+          Promise.all([studentRef.once("value"), teacherRef.once("value")])
+            .then(([studentSnapshot, teacherSnapshot]) => {
+              let userData = null;
+              let actualRole = null;
+
+              if (studentSnapshot.exists()) {
+                userData = studentSnapshot.val();
+                actualRole = 'student';
+              } else if (teacherSnapshot.exists()) {
+                userData = teacherSnapshot.val();
+                actualRole = 'teacher';
               }
+
+              if (!userData) {
+                alert("User data not found. Please contact administrator.");
+                auth.signOut();
+                return;
+              }
+
+              // Verify that the selected role matches the actual role
+              if (selectedRole !== actualRole) {
+                alert(`Role mismatch. Your account is registered as a ${actualRole}. Please select the correct role.`);
+                auth.signOut();
+                return;
+              }
+
+              // If we get here, the roles match
+              if (!userData.completedLevels) {
+                // If completedLevels is not set, initialize it
+                const dbRef = db.ref(`${actualRole}s/${uid}`);
+                dbRef.update({
+                  completedLevels: [false, false, false]
+                });
+              }
+
+              // Store the role in localStorage when signing in
+              localStorage.setItem("role", actualRole);
+
+              alert("Login successful!");
+              const targetPage = actualRole === "student" ? "homeStudent.html" : "teacherDashboard.html";
+              window.location.href = targetPage;
             });
         })
         .catch((error) => {

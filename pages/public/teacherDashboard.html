@@ -113,7 +113,7 @@
                 const tableBody = document.querySelector('.performance-table tbody');
                 const averageScoreElement = document.getElementById('average-score');
                 
-                let totalScore = 0;
+                let totalPercentage = 0;
                 let studentCount = 0;
 
                 tableBody.innerHTML = ''; // Clear previous rows
@@ -121,24 +121,26 @@
                 for (const studentId in students) {
                   const student = students[studentId];
 
-                  totalScore += student.midtermScore;
+                  // Calculate percentage for individual student
+                  const percentage = (student.midtermScore / student.totalScore) * 100;
+                  totalPercentage += percentage;
                   studentCount++;
 
                   const tr = document.createElement('tr');
                   tr.innerHTML = `
                     <td>${studentId}</td>
                     <td>${student.name}</td>
-                    <td>${student.midtermScore} / ${student.totalScore}</td>
+                    <td>${percentage.toFixed(2)}%</td>
                     <td>Completed ${student.completedLevels.filter(level => level === true).length} out of 3 Levels</td>
                     <td>${new Date(student.retakeDate).toLocaleString()}</td>
                   `;
                   tableBody.appendChild(tr);
                 }
 
-                // Calculate and display the average score
+                // Calculate and display the average percentage
                 if (studentCount > 0) {
-                  const averageScore = totalScore / studentCount;
-                  averageScoreElement.textContent = averageScore.toFixed(2);
+                  const averagePercentage = totalPercentage / studentCount;
+                  averageScoreElement.textContent = `${averagePercentage.toFixed(2)}%`;
                 } else {
                   averageScoreElement.textContent = 'No students available';
                 }
