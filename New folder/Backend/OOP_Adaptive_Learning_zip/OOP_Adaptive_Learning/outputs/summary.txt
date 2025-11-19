@@ -1,6 +1,0 @@
-Weakness Summary (Number of Students Weak in Each Topic):
-Principles of OOP: 368
-Classes & Objects: 396
-Inheritance & Polymorphism: 1997
-OOP Core Concepts: 1340
-Collections & Generics: 1467

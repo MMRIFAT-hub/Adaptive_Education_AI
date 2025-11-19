@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grade Students - EDGo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* General Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a2a6c, #000000, #1a2a6c);
+      color: #fff;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* Header Styles */
+    header {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 20px 0;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(5px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    header .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 40px;
+    }
+
+    header .logo a {
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      color: #3498db;
+      font-size: 28px;
+    }
+
+    .glow-title {
+      font-size: 30px;
+      font-weight: bold;
+      text-transform: uppercase;
+      text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+      background: linear-gradient(to right, #d2cbcb, #e4e0f0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    /* Card Styles */
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .card-icon {
+      font-size: 28px;
+      color: #3498db;
+      margin-right: 15px;
+    }
+
+    .card-title {
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    /* Form Styles */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #e0e0e0;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: white;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #3498db;
+      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+    }
+
+    /* Button Styles */
+    .btn {
+      padding: 12px 25px;
+      background: linear-gradient(45deg, #3498db, #1a5276);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+      background: linear-gradient(45deg, #1a5276, #3498db);
+    }
+
+    .btn-primary {
+      background: linear-gradient(45deg, #2ecc71, #27ae60);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(45deg, #27ae60, #2ecc71);
+    }
+
+    .btn-full {
+      width: 100%;
+      justify-content: center;
+    }
+
+    /* Student List */
+    .student-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .student-btn {
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .student-btn:hover {
+      background: rgba(52, 152, 219, 0.2);
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .student-icon {
+      font-size: 18px;
+      color: #3498db;
+    }
+
+    /* Score Indicators */
+    .score-container {
+      display: flex;
+      justify-content: space-between;
+      margin: 20px 0;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+    }
+
+    .score-item {
+      text-align: center;
+      flex: 1;
+    }
+
+    .score-value {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .total-score {
+      color: #3498db;
+    }
+
+    .max-score {
+      color: #2ecc71;
+    }
+
+    .student-score {
+      color: #f39c12;
+    }
+
+    .score-label {
+      font-size: 14px;
+      color: #b0b0b0;
+    }
+
+    /* Progress Bar */
+    .progress-container {
+      height: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+      margin: 15px 0;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #2ecc71, #3498db);
+      border-radius: 5px;
+      transition: width 0.5s ease;
+    }
+
+    /* Topic Cards */
+    .topic-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .topic-card {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      padding: 15px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .topic-card:hover {
+      background: rgba(52, 152, 219, 0.1);
+      transform: translateY(-3px);
+    }
+
+    .topic-name {
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #e0e0e0;
+    }
+
+    .topic-input {
+      width: 100%;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+      color: white;
+      text-align: center;
+    }
+
+    /* Alert Styles */
+    .alert {
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .alert-warning {
+      background: rgba(243, 156, 18, 0.2);
+      border-left: 4px solid #f39c12;
+    }
+
+    .alert-icon {
+      font-size: 24px;
+    }
+
+    /* Responsive Design */
+    @media screen and (max-width: 768px) {
+      .container {
+        padding: 0 15px;
+      }
+      
+      .card {
+        padding: 20px;
+      }
+      
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .student-list {
+        grid-template-columns: 1fr;
+      }
+      
+      .score-container {
+        flex-direction: column;
+        gap: 20px;
+      }
+      
+      .topic-cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      header .nav-bar {
+        padding: 0 20px;
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      .glow-title {
+        font-size: 24px;
+      }
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(46, 204, 113, 0.9);
+      color: white;
+      padding: 15px 25px;
+      border-radius: 50px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <ul class="nav-bar">
+        <li class="logo"><a href="index.html"><i class="fas fa-graduation-cap logo-icon"></i> EDGo</a></li>
+        <div class="center-links">
+          <h1 class="glow-title">Exam Grading System</h1>
+        </div>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-cogs card-icon"></i>
+        <h2 class="card-title">Configure Exam Structure</h2>
+      </div>
+      
+      <form id="exam-config-form">
+        <div class="form-group">
+          <label class="form-label">Number of Questions</label>
+          <input type="number" id="num-questions" class="form-control" required min="1" max="20" value="6">
+          <small style="color: #b0b0b0; display: block; margin-top: 5px;">Note: The system is configured for exactly 6 questions matching the 6 OOP topics.</small>
+        </div>
+        
+        <div id="question-configs"></div>
+        
+        <div class="score-container">
+          <div class="score-item">
+            <div class="score-value total-score" id="total-score">0</div>
+            <div class="score-label">Total Marks</div>
+          </div>
+          <div class="score-item">
+            <div class="score-value max-score" id="exam-max-score">0</div>
+            <div class="score-label">Max Score</div>
+          </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary btn-full">
+          <i class="fas fa-save"></i> Save Exam Structure
+        </button>
+      </form>
+    </div>
+
+    <div class="card grading-section" style="display:none">
+      <div class="card-header">
+        <i class="fas fa-user-graduate card-icon"></i>
+        <h2 class="card-title">Grade Students</h2>
+      </div>
+      
+      <div class="alert alert-warning">
+        <i class="fas fa-info-circle alert-icon"></i>
+        <div>
+          <h3>Grading Instructions</h3>
+          <p>Select a student from the list below and enter their marks for each topic. The system will automatically calculate their total score and percentage.</p>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Select Student</label>
+        <div class="student-list" id="student-list">
+          <!-- Student buttons will be inserted here -->
+        </div>
+      </div>
+      
+      <form id="grade-form" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Student Email</label>
+          <input type="email" id="student-email" class="form-control" required readonly>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Topic Marks</label>
+          <div class="topic-cards" id="grading-inputs">
+            <!-- Grading inputs will be inserted here -->
+          </div>
+        </div>
+        
+        <div class="score-container">
+          <div class="score-item">
+            <div class="score-value student-score" id="student-total-score">0</div>
+            <div class="score-label">Student Score</div>
+          </div>
+          <div class="score-item">
+            <div class="score-value max-score" id="student-max-score">0</div>
+            <div class="score-label">Max Possible</div>
+          </div>
+          <div class="score-item">
+            <div class="score-value total-score" id="student-percentage">0%</div>
+            <div class="score-label">Percentage</div>
+          </div>
+        </div>
+        
+        <div class="progress-container">
+          <div class="progress-bar" id="student-progress" style="width: 0%"></div>
+        </div>
+        
+        <div id="struggling-questions" class="alert alert-warning" style="display: none;">
+          <i class="fas fa-exclamation-triangle alert-icon"></i>
+          <div>
+            <h3>Areas for Improvement</h3>
+            <p id="struggling-text">This student may need additional support in the following topics:</p>
+          </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary btn-full">
+          <i class="fas fa-check-circle"></i> Submit Grade
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <i class="fas fa-check-circle"></i>
+    <span>Grade submitted successfully!</span>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getDatabase, ref, set, update, get } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD63qm0V0F0Y0PExzmmOCP9nJ7a6x1vCgs",
+      authDomain: "edora2.firebaseapp.com",
+      databaseURL: "https://edora2-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "edora2",
+      storageBucket: "edora2.firebasestorage.app",
+      messagingSenderId: "908106047332",
+      appId: "1:908106047332:web:4b412cd208e88fceb06471",
+      measurementId: "G-ELBKQDSSKC"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    let questionWeights = [];
+    let questionTopics = [];
+    let totalAvailableMarks = 0;
+
+    // Fixed list of topics
+    const fixedTopics = [
+      'Class', 'Interface', 'Inheritance', 'Encapsulation', 'Polymorphism', 'Constructor'
+    ];
+
+    // Function to show toast notification
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.querySelector('span').textContent = message;
+      toast.classList.add('show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // Function to handle exam configuration
+    document.getElementById("exam-config-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const numQuestions = parseInt(document.getElementById("num-questions").value);
+
+      if (numQuestions !== 6) {
+        alert("You must enter exactly 6 questions.");
+        return;
+      }
+
+      questionWeights = [];
+      questionTopics = [];
+      totalAvailableMarks = 0;
+
+      const qcDiv = document.getElementById("question-configs");
+      qcDiv.innerHTML = '';
+
+      // Fixed topics, no need for dynamic input
+      fixedTopics.forEach((topic, index) => {
+        qcDiv.innerHTML += `
+          <div class="topic-card">
+            <div class="topic-name">${topic}</div>
+            <input type="number" id="qm-${index}" class="topic-input marks-input" placeholder="Marks" required min="1" max="20">
+          </div>
+        `;
+      });
+
+      // Update the total available marks when the marks inputs change
+      qcDiv.addEventListener("input", () => {
+        const inputs = document.querySelectorAll(".marks-input");
+        let total = 0;
+        inputs.forEach(input => {
+          total += parseFloat(input.value || 0);
+        });
+        document.getElementById("total-score").innerText = total;
+        document.getElementById("exam-max-score").innerText = total;
+        totalAvailableMarks = total;
+      });
+
+      setTimeout(() => {
+        document.querySelector(".grading-section").style.display = "block";
+        document.getElementById("grading-inputs").innerHTML = '';
+
+        // Fixed topics for grading form
+        fixedTopics.forEach((topic, index) => {
+          document.getElementById("grading-inputs").innerHTML += `
+            <div class="topic-card">
+              <div class="topic-name">${topic}</div>
+              <input type="number" name="qmark-${index}" class="topic-input student-mark" placeholder="Score" required min="0" max="20">
+            </div>
+          `;
+        });
+
+        document.getElementById("grading-inputs").addEventListener("input", () => {
+          const markInputs = document.querySelectorAll(".student-mark");
+          let score = 0;
+          markInputs.forEach(input => score += parseFloat(input.value || 0));
+          
+          document.getElementById("student-total-score").innerText = score;
+          document.getElementById("student-max-score").innerText = totalAvailableMarks;
+          
+          // Calculate and display percentage
+          const percentage = totalAvailableMarks > 0 ? Math.round((score / totalAvailableMarks) * 100) : 0;
+          document.getElementById("student-percentage").innerText = `${percentage}%`;
+          document.getElementById("student-progress").style.width = `${percentage}%`;
+          
+          // Identify struggling topics (score < 50% of max for that topic)
+          const maxMarks = [];
+          fixedTopics.forEach((topic, index) => {
+            const maxMarkInput = document.getElementById(`qm-${index}`);
+            maxMarks.push(parseFloat(maxMarkInput.value) || 1);
+          });
+          
+          const strugglingTopics = [];
+          markInputs.forEach((input, index) => {
+            const mark = parseFloat(input.value) || 0;
+            const maxMark = maxMarks[index];
+            if (maxMark > 0 && (mark / maxMark) < 0.5) {
+              strugglingTopics.push(fixedTopics[index]);
+            }
+          });
+          
+          const strugglingDiv = document.getElementById("struggling-questions");
+          if (strugglingTopics.length > 0) {
+            document.getElementById("struggling-text").innerHTML = `This student may need additional support in the following topics: <strong>${strugglingTopics.join(', ')}</strong>`;
+            strugglingDiv.style.display = 'flex';
+          } else {
+            strugglingDiv.style.display = 'none';
+          }
+        });
+      }, 100);
+
+      // Save the exam structure (including max score) to the database
+      const teacherId = auth.currentUser.uid;
+      const examRef = ref(db, `teachers/${teacherId}/examStructure`);
+      set(examRef, {
+        maxScore: totalAvailableMarks,
+        questions: questionWeights,
+      });
+    });
+
+    // Listen for authentication changes
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const teacherId = user.uid;
+        const studentsRef = ref(db, `teachers/${teacherId}/students`);
+        const snapshot = await get(studentsRef);
+
+        if (snapshot.exists()) {
+          const students = snapshot.val();
+          const studentListDiv = document.getElementById("student-list");
+          studentListDiv.innerHTML = '';
+
+          for (const key in students) {
+            const student = students[key];
+            studentListDiv.innerHTML += `
+              <button class="student-btn" data-email="${student.email}">
+                <i class="fas fa-user student-icon"></i>
+                ${student.email}
+              </button>
+            `;
+          }
+
+          document.querySelectorAll('.student-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              document.getElementById("student-email").value = btn.getAttribute("data-email");
+              document.getElementById("grade-form").style.display = "block";
+              
+              // Reset form when selecting a new student
+              document.querySelectorAll('.student-mark').forEach(input => {
+                input.value = '';
+              });
+              document.getElementById("student-total-score").innerText = '0';
+              document.getElementById("student-percentage").innerText = '0%';
+              document.getElementById("student-progress").style.width = '0%';
+              document.getElementById("struggling-questions").style.display = 'none';
+            });
+          });
+        }
+      }
+    });
+
+    // Grading the student - UPDATED VERSION
+    document.getElementById("grade-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const studentEmail = document.getElementById("student-email").value;
+      const markInputs = document.querySelectorAll(".student-mark");
+
+      let total = 0;
+      const topicScores = {};
+
+      // Get the maximum marks for each topic from the exam configuration
+      const maxMarks = [];
+      fixedTopics.forEach((topic, index) => {
+        const maxMarkInput = document.getElementById(`qm-${index}`);
+        const maxMark = parseFloat(maxMarkInput.value) || 1; // Default to 1 to avoid division by zero
+        maxMarks.push(maxMark);
+      });
+
+      // Loop through each topic and calculate percentage
+      markInputs.forEach((input, index) => {
+        const mark = parseFloat(input.value);
+        const maxMark = maxMarks[index];
+        const topic = fixedTopics[index] + "_label";
+        
+        // Calculate percentage for this topic
+        const topicPercentage = (mark / maxMark) * 100;
+        topicScores[topic] = topicPercentage; // Store as percentage
+        
+        total += mark; // Accumulate total raw score
+      });
+
+      // Calculate overall percentage
+      const overallPercentage = totalAvailableMarks > 0 ? (total / totalAvailableMarks) * 100 : 0;
+
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          const teacherId = user.uid;
+          const studentKey = studentEmail.replace(/\./g, '_');
+
+          const studentRef = ref(db, `teachers/${teacherId}/students/${studentKey}`);
+          const globalStudentRef = ref(db, `students`);
+
+          // Update Firebase with the new structure (topic scores as percentages)
+          await update(studentRef, {
+            student_id: studentKey,
+            topic_scores: topicScores, // Now stores percentages for each topic
+            midtermScore: total, // Store the raw total marks obtained
+            percentage: overallPercentage, // Store overall percentage
+            totalScore: totalAvailableMarks, // Store the total available marks
+          });
+
+          // Also update in the global students node
+          const snapshot = await get(globalStudentRef);
+          if (snapshot.exists()) {
+            const allStudents = snapshot.val();
+            for (const key in allStudents) {
+              if (allStudents[key].email === studentEmail) {
+                const studentGlobalRef = ref(db, `students/${key}`);
+                await update(studentGlobalRef, {
+                  student_id: studentKey,
+                  topic_scores: topicScores, // Percentages for each topic
+                  midtermScore: total,
+                  percentage: overallPercentage,
+                  totalScore: totalAvailableMarks,
+                });
+              }
+            }
+          }
+
+          showToast("Grade submitted successfully!");
+          
+          // Reset form after submission
+          document.querySelectorAll('.student-mark').forEach(input => {
+            input.value = '';
+          });
+          document.getElementById("student-total-score").innerText = '0';
+          document.getElementById("student-percentage").innerText = '0%';
+          document.getElementById("student-progress").style.width = '0%';
+          document.getElementById("struggling-questions").style.display = 'none';
+        } else {
+          alert("You must be logged in as a teacher.");
+        }
+      });
+    });
+  </script>
+</body>
+</html>

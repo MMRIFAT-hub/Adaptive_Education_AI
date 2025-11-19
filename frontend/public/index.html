@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign In / Sign Up</title>
+  <link rel="stylesheet" href="login_style.css" />
+</head>
+<body>
+  <div class="logo">
+    <h1>EDORA</h1>
+  </div>
+  <div class="logo1">
+    <h1>EDORA</h1>
+  </div>
+
+  <div class="container" id="container">
+    <!-- Sign Up Form -->
+    <div class="form-container sign-up-container">
+      <form id="signup-form">
+        <h1>Create Account</h1>
+        <input type="text" name="name" placeholder="Name" required />
+        <input type="email" name="email" placeholder="Email" required />
+        <input type="password" name="password" placeholder="Password" required />
+        <div class="role-toggle">
+          <input type="radio" id="student-role-signup" name="role" value="student" required />
+          <label for="student-role-signup">Student</label>
+          <input type="radio" id="teacher-role-signup" name="role" value="teacher" />
+          <label for="teacher-role-signup">Teacher</label>
+        </div>
+        <button type="submit">Sign Up</button>
+      </form>
+    </div>
+
+    <!-- Sign In Form -->
+    <div class="form-container sign-in-container">
+      <form id="signin-form">
+        <h1>Sign In</h1>
+        <input type="email" name="email" placeholder="Email" required />
+        <input type="password" name="password" placeholder="Password" required />
+        <div class="role-toggle">
+          <input type="radio" id="student-role-signin" name="role" value="student" required />
+          <label for="student-role-signin">Student</label>
+          <input type="radio" id="teacher-role-signin" name="role" value="teacher" />
+          <label for="teacher-role-signin">Teacher</label>
+        </div>
+        <button type="submit">Sign In</button>
+      </form>
+    </div>
+
+    <!-- Overlay Panels -->
+    <div class="overlay-container">
+      <div class="overlay">
+        <div class="overlay-panel overlay-left">
+          <h1>Welcome Back!</h1>
+          <p>To keep connected with us please login with your personal info</p>
+          <button class="ghost" id="signIn">Sign In</button>
+        </div>
+        <div class="overlay-panel overlay-right">
+          <h1>Hello, Friend!</h1>
+          <p>Enter your personal details and start your journey with us</p>
+          <button class="ghost" id="signUp">Sign Up</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-database-compat.js"></script>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyD63qm0V0F0Y0PExzmmOCP9nJ7a6x1vCgs",
+      authDomain: "edora2.firebaseapp.com",
+      databaseURL: "https://edora2-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "edora2",
+      storageBucket: "edora2.firebasestorage.app",
+      messagingSenderId: "908106047332",
+      appId: "1:908106047332:web:4b412cd208e88fceb06471",
+      measurementId: "G-ELBKQDSSKC"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    // 🔐 SIGN UP
+    document.getElementById("signup-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const name = e.target.name.value;
+      const email = e.target.email.value;
+      const password = e.target.password.value;
+      const role = document.querySelector('#signup-form input[name="role"]:checked').value;
+
+      console.log("Sign Up Attempt:", email, role);
+
+      auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          const uid = user.uid;  // Firebase-generated UID
+
+          // Generate userId based on the role
+          let userId = email;  // Use email as userId for students
+          if (role === "teacher") {
+            userId = "TCH" + Math.floor(Math.random() * 10000); // Random ID for teachers
+          }
+
+          // Initialize completedLevels array with 3 levels
+          const completedLevels = [false, false, false]; // Initially all levels are not completed
+
+          // Store user data in Firebase
+          return db.ref(`${role}s/${uid}`).set({
+            name,
+            email,
+            role,
+            userId,  // Use email as student ID or random teacher ID
+            score: role === "student" ? 0 : null,
+            retakeDaysLeft: role === "student" ? 5 : null,
+            completedLevels: completedLevels  // Add completedLevels array
+          });
+        })
+        .then(() => {
+          alert("Signup successful!");
+          localStorage.setItem("role", role); // Save role in localStorage
+          const targetPage = role === "student" ? "homeStudent.html" : "teacherDashboard.html";
+          window.location.href = targetPage;
+        })
+        .catch((error) => {
+          console.error("Signup error:", error.message);
+          alert("Signup error: " + error.message);
+        });
+    });
+
+    // 🔐 SIGN IN - FIXED VERSION
+    document.getElementById("signin-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const email = e.target.email.value;
+      const password = e.target.password.value;
+      const selectedRole = document.querySelector('#signin-form input[name="role"]:checked').value;
+
+      auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          const uid = user.uid; // Firebase-generated UID
+
+          // Check both student and teacher nodes to find where the user exists
+          const studentRef = db.ref(`students/${uid}`);
+          const teacherRef = db.ref(`teachers/${uid}`);
+
+          // Check both locations
+          Promise.all([studentRef.once("value"), teacherRef.once("value")])
+            .then(([studentSnapshot, teacherSnapshot]) => {
+              let userData = null;
+              let actualRole = null;
+
+              if (studentSnapshot.exists()) {
+                userData = studentSnapshot.val();
+                actualRole = 'student';
+              } else if (teacherSnapshot.exists()) {
+                userData = teacherSnapshot.val();
+                actualRole = 'teacher';
+              }
+
+              if (!userData) {
+                alert("User data not found. Please contact administrator.");
+                auth.signOut();
+                return;
+              }
+
+              // Verify that the selected role matches the actual role
+              if (selectedRole !== actualRole) {
+                alert(`Role mismatch. Your account is registered as a ${actualRole}. Please select the correct role.`);
+                auth.signOut();
+                return;
+              }
+
+              // If we get here, the roles match
+              if (!userData.completedLevels) {
+                // If completedLevels is not set, initialize it
+                const dbRef = db.ref(`${actualRole}s/${uid}`);
+                dbRef.update({
+                  completedLevels: [false, false, false]
+                });
+              }
+
+              // Store the role in localStorage when signing in
+              localStorage.setItem("role", actualRole);
+
+              alert("Login successful!");
+              const targetPage = actualRole === "student" ? "homeStudent.html" : "teacherDashboard.html";
+              window.location.href = targetPage;
+            });
+        })
+        .catch((error) => {
+          console.error("Login error:", error.message);
+          alert("Login error: " + error.message);
+        });
+    });
+  </script>
+  <script src="script.js"></script>
+</body>
+</html>

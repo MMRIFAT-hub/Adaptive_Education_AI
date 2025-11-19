@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Retake - EDGo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #000000, #1a2a6c);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            background: linear-gradient(to right, #d2cbcb, #e4e0f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+        
+        .logo a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .profile-icon {
+            color: white;
+            font-size: 1.5rem;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .card h2 {
+            margin-bottom: 20px;
+            color: #3498db;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card h2 i {
+            font-size: 1.5rem;
+        }
+        
+        .level-status {
+            margin-bottom: 25px;
+        }
+        
+        .level-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .level-item.completed {
+            background: rgba(46, 204, 113, 0.2);
+            border-left: 4px solid #2ecc71;
+        }
+        
+        .level-item.locked {
+            background: rgba(149, 165, 166, 0.2);
+            border-left: 4px solid #95a5a6;
+        }
+        
+        .level-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .level-icon {
+            font-size: 1.2rem;
+        }
+        
+        .completed .level-icon {
+            color: #2ecc71;
+        }
+        
+        .locked .level-icon {
+            color: #95a5a6;
+        }
+        
+        .retake-form {
+            margin-top: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        textarea.form-control {
+            resize: vertical;
+            min-height: 120px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .checkbox-group input {
+            transform: scale(1.2);
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            background: linear-gradient(45deg, #3498db, #1a5276);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(45deg, #e67e22, #d35400);
+        }
+        
+        .btn-secondary:hover {
+            background: linear-gradient(45deg, #d35400, #e67e22);
+        }
+        
+        .btn-full {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .retake-history {
+            margin-top: 30px;
+        }
+        
+        .history-item {
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .history-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .status-pending {
+            background: rgba(243, 156, 18, 0.3);
+            color: #f39c12;
+        }
+        
+        .status-approved {
+            background: rgba(46, 204, 113, 0.3);
+            color: #2ecc71;
+        }
+        
+        .status-rejected {
+            background: rgba(231, 76, 60, 0.3);
+            color: #e74c3c;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .alert-info {
+            background: rgba(52, 152, 219, 0.2);
+            border-left: 4px solid #3498db;
+        }
+        
+        .alert-warning {
+            background: rgba(243, 156, 18, 0.2);
+            border-left: 4px solid #f39c12;
+        }
+        
+        .alert-success {
+            background: rgba(46, 204, 113, 0.2);
+            border-left: 4px solid #2ecc71;
+        }
+        
+        .alert-icon {
+            font-size: 1.5rem;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="nav-bar">
+                <div class="logo">
+                    <a href="index.html">EDGo</a>
+                </div>
+                <h1>Retake Request System</h1>
+                <div class="user-info">
+                    <span id="user-name">Student Name</span>
+                    <a href="personalInfo.html" class="profile-icon" title="Profile">
+                        <i class="fas fa-user-circle"></i>
+                    </a>
+                </div>
+            </div>
+        </header>
+        
+        <div class="alert alert-info" id="completion-alert">
+            <i class="fas fa-info-circle alert-icon"></i>
+            <div>
+                <h3>Retake Eligibility</h3>
+                <p>You can request a retake only after completing all 3 levels with a score of 80% or higher.</p>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="card">
+                <h2><i class="fas fa-tasks"></i> Level Completion Status</h2>
+                
+                <div class="level-status">
+                    <div class="level-item completed" id="level-1-status">
+                        <div class="level-info">
+                            <i class="fas fa-check-circle level-icon"></i>
+                            <div>
+                                <h4>Level 1: Beginner</h4>
+                                <p>Completed on: <span id="level-1-date">2023-10-15</span></p>
+                            </div>
+                        </div>
+                        <div class="level-score">92%</div>
+                    </div>
+                    
+                    <div class="level-item completed" id="level-2-status">
+                        <div class="level-info">
+                            <i class="fas fa-check-circle level-icon"></i>
+                            <div>
+                                <h4>Level 2: Intermediate</h4>
+                                <p>Completed on: <span id="level-2-date">2023-10-22</span></p>
+                            </div>
+                        </div>
+                        <div class="level-score">85%</div>
+                    </div>
+                    
+                    <div class="level-item completed" id="level-3-status">
+                        <div class="level-info">
+                            <i class="fas fa-check-circle level-icon"></i>
+                            <div>
+                                <h4>Level 3: Advanced</h4>
+                                <p>Completed on: <span id="level-3-date">2023-10-29</span></p>
+                            </div>
+                        </div>
+                        <div class="level-score">88%</div>
+                    </div>
+                </div>
+                
+                <div class="eligibility-status">
+                    <h3>Retake Eligibility: <span id="eligibility-text" style="color: #2ecc71;">Eligible</span></h3>
+                    <p>You have completed all levels and are eligible to request a retake.</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-redo-alt"></i> Request Retake</h2>
+                
+                <div class="retake-form">
+                    <div class="form-group">
+                        <label for="retake-levels">Select Levels to Retake</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="level-1-retake" checked>
+                            <label for="level-1-retake">Level 1: Beginner</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="level-2-retake" checked>
+                            <label for="level-2-retake">Level 2: Intermediate</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="level-3-retake" checked>
+                            <label for="level-3-retake">Level 3: Advanced</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="retake-reason">Reason for Retake Request</label>
+                        <select class="form-control" id="retake-reason">
+                            <option value="">Select a reason</option>
+                            <option value="improve_score">Improve my score</option>
+                            <option value="better_understanding">Better understanding of concepts</option>
+                            <option value="preparation">Preparation for exams</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="additional-info">Additional Information (Optional)</label>
+                        <textarea class="form-control" id="additional-info" placeholder="Please provide any additional information that might help in evaluating your request..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="preferred-date">Preferred Retake Date</label>
+                        <input type="date" class="form-control" id="preferred-date">
+                    </div>
+                    
+                    <button class="btn btn-primary btn-full" id="submit-request">
+                        <i class="fas fa-paper-plane"></i> Submit Retake Request
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2><i class="fas fa-history"></i> Retake Request History</h2>
+            
+            <div class="retake-history" id="retake-history">
+                <div class="history-item">
+                    <div class="history-header">
+                        <h4>Request #RTK-001</h4>
+                        <span class="history-status status-approved">Approved</span>
+                    </div>
+                    <p><strong>Levels:</strong> Level 1, Level 2, Level 3</p>
+                    <p><strong>Submitted:</strong> 2023-11-01</p>
+                    <p><strong>Approved:</strong> 2023-11-03</p>
+                    <p><strong>Scheduled:</strong> 2023-11-10</p>
+                </div>
+                
+                <div class="history-item">
+                    <div class="history-header">
+                        <h4>Request #RTK-002</h4>
+                        <span class="history-status status-pending">Pending</span>
+                    </div>
+                    <p><strong>Levels:</strong> Level 2, Level 3</p>
+                    <p><strong>Submitted:</strong> 2023-11-05</p>
+                    <p><strong>Status:</strong> Waiting for faculty approval</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>EDGo Learning Platform &copy; 2023 | Dhaka, Bangladesh</p>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyD63qm0V0F0Y0PExzmmOCP9nJ7a6x1vCgs",
+            authDomain: "edora2.firebaseapp.com",
+            databaseURL: "https://edora2-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "edora2",
+            storageBucket: "edora2.firebasestorage.app",
+            messagingSenderId: "908106047332",
+            appId: "1:908106047332:web:4b412cd208e88fceb06471",
+            measurementId: "G-ELBKQDSSKC"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // Current user
+        let currentUser = null;
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check authentication state
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('user-name').textContent = user.email;
+                    
+                    // Load user data and retake requests
+                    loadUserData();
+                    loadRetakeRequests();
+                } else {
+                    // Redirect to login if not authenticated
+                    window.location.href = "index.html";
+                }
+            });
+
+            // Add event listener for submit button
+            document.getElementById('submit-request').addEventListener('click', submitRetakeRequest);
+        });
+
+        // Load user data from Firebase
+        function loadUserData() {
+            if (!currentUser) return;
+            
+            const userId = currentUser.uid;
+            const userRef = db.ref(`students/${userId}`);
+            
+            userRef.once('value').then(snapshot => {
+                const userData = snapshot.val();
+                
+                if (userData) {
+                    // Update level completion status
+                    if (userData.completedLevels) {
+                        updateLevelStatus(userData.completedLevels);
+                    }
+                    
+                    // Check eligibility
+                    checkRetakeEligibility(userData);
+                }
+            }).catch(error => {
+                console.error("Error loading user data:", error);
+            });
+        }
+
+        // Update level status display
+        function updateLevelStatus(completedLevels) {
+            const levels = [
+                { id: 'level-1-status', name: 'Level 1: Beginner' },
+                { id: 'level-2-status', name: 'Level 2: Intermediate' },
+                { id: 'level-3-status', name: 'Level 3: Advanced' }
+            ];
+            
+            levels.forEach((level, index) => {
+                const levelElement = document.getElementById(level.id);
+                
+                if (completedLevels[index]) {
+                    levelElement.className = 'level-item completed';
+                } else {
+                    levelElement.className = 'level-item locked';
+                    levelElement.querySelector('.level-icon').className = 'fas fa-lock level-icon';
+                    levelElement.querySelector('h4').textContent = level.name + ' (Locked)';
+                    levelElement.querySelector('.level-score').textContent = 'Not Completed';
+                }
+            });
+        }
+
+        // Check if user is eligible for retake
+        function checkRetakeEligibility(userData) {
+            const completedLevels = userData.completedLevels || [false, false, false];
+            const allLevelsCompleted = completedLevels.every(level => level === true);
+            
+            const eligibilityText = document.getElementById('eligibility-text');
+            const submitButton = document.getElementById('submit-request');
+            
+            if (allLevelsCompleted) {
+                eligibilityText.textContent = 'Eligible';
+                eligibilityText.style.color = '#2ecc71';
+                submitButton.disabled = false;
+            } else {
+                eligibilityText.textContent = 'Not Eligible';
+                eligibilityText.style.color = '#e74c3c';
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-ban"></i> Complete All Levels First';
+            }
+        }
+
+        // Load retake requests from Firebase
+        function loadRetakeRequests() {
+            if (!currentUser) return;
+            
+            const userId = currentUser.uid;
+            const requestsRef = db.ref(`retakeRequests/${userId}`);
+            
+            requestsRef.once('value').then(snapshot => {
+                const requests = snapshot.val();
+                const historyContainer = document.getElementById('retake-history');
+                
+                if (requests) {
+                    // Clear existing history (except sample data)
+                    historyContainer.innerHTML = '';
+                    
+                    // Add requests from Firebase
+                    Object.keys(requests).forEach(requestId => {
+                        const request = requests[requestId];
+                        const historyItem = createHistoryItem(requestId, request);
+                        historyContainer.appendChild(historyItem);
+                    });
+                }
+            }).catch(error => {
+                console.error("Error loading retake requests:", error);
+            });
+        }
+
+        // Create history item element
+        function createHistoryItem(requestId, request) {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            
+            let statusClass = 'status-pending';
+            if (request.status === 'approved') statusClass = 'status-approved';
+            if (request.status === 'rejected') statusClass = 'status-rejected';
+            
+            item.innerHTML = `
+                <div class="history-header">
+                    <h4>Request #${requestId}</h4>
+                    <span class="history-status ${statusClass}">${request.status.charAt(0).toUpperCase() + request.status.slice(1)}</span>
+                </div>
+                <p><strong>Levels:</strong> ${request.levels.join(', ')}</p>
+                <p><strong>Submitted:</strong> ${new Date(request.submittedDate).toLocaleDateString()}</p>
+                ${request.status === 'approved' ? `<p><strong>Approved:</strong> ${new Date(request.approvedDate).toLocaleDateString()}</p>` : ''}
+                ${request.scheduledDate ? `<p><strong>Scheduled:</strong> ${new Date(request.scheduledDate).toLocaleDateString()}</p>` : ''}
+                ${request.facultyComment ? `<p><strong>Faculty Comment:</strong> ${request.facultyComment}</p>` : ''}
+            `;
+            
+            return item;
+        }
+
+        // Submit retake request
+        function submitRetakeRequest() {
+            if (!currentUser) return;
+            
+            // Get form values
+            const levels = [];
+            if (document.getElementById('level-1-retake').checked) levels.push('Level 1');
+            if (document.getElementById('level-2-retake').checked) levels.push('Level 2');
+            if (document.getElementById('level-3-retake').checked) levels.push('Level 3');
+            
+            const reason = document.getElementById('retake-reason').value;
+            const additionalInfo = document.getElementById('additional-info').value;
+            const preferredDate = document.getElementById('preferred-date').value;
+            
+            // Validate form
+            if (levels.length === 0) {
+                alert('Please select at least one level to retake.');
+                return;
+            }
+            
+            if (!reason) {
+                alert('Please select a reason for your retake request.');
+                return;
+            }
+            
+            // Create request object
+            const request = {
+                studentId: currentUser.uid,
+                studentName: currentUser.email,
+                levels: levels,
+                reason: reason,
+                additionalInfo: additionalInfo,
+                preferredDate: preferredDate,
+                submittedDate: new Date().toISOString(),
+                status: 'pending'
+            };
+            
+            // Generate request ID
+            const requestId = 'RTK-' + Date.now();
+            
+            // Save to Firebase
+            const requestRef = db.ref(`retakeRequests/${currentUser.uid}/${requestId}`);
+            requestRef.set(request)
+                .then(() => {
+                    alert('Retake request submitted successfully!');
+                    // Reset form
+                    document.getElementById('additional-info').value = '';
+                    document.getElementById('preferred-date').value = '';
+                    // Reload requests
+                    loadRetakeRequests();
+                })
+                .catch(error => {
+                    console.error("Error submitting retake request:", error);
+                    alert('Error submitting request. Please try again.');
+                });
+        }
+    </script>
+</body>
+</html>
