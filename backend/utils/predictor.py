@@ -1,70 +1,51 @@
-# This is the main prediction logic
-# File: app/services/predictor.py
+# utils/predictor.py
 
 import os
-import json
-from typing import Dict
+import numpy as np
 import joblib
 
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))  # .../backend
+MODELS_DIR = os.path.join(BASE_DIR, "models")
 
-# Load saved models
-MODEL_DIR = "models"
-loaded_models = {}
-loaded_encoders = {}
+TOPICS = ["Class", "Constructor", "Encapsulation", "Inheritance", "Interface", "Polymorphism"]
 
-for file in os.listdir(MODEL_DIR):
-    if file.startswith("rf_model_") and file.endswith(".pkl"):
-        topic = file.replace("rf_model_", "").replace(".pkl", "")
-        model_path = os.path.join(MODEL_DIR, file)
-        encoder_path = os.path.join(MODEL_DIR, f"label_encoder_{topic}.pkl")
+topic_models = {}
 
-        # Load Random Forest model
-        model = joblib.load(model_path)
-        loaded_models[topic] = model
-
-        # Load label encoder
-        if os.path.exists(encoder_path):
-            encoder = joblib.load(encoder_path)
-            loaded_encoders[topic] = encoder
+for topic in TOPICS:
+    model_path = os.path.join(MODELS_DIR, f"rf_model_{topic}_label.pkl")
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model file not found for topic {topic}: {model_path}")
+    topic_models[topic] = joblib.load(model_path)
 
 
-def predict_student_levels(student_id: str, topic_scores: Dict[str, float]) -> Dict[str, str]:
-    predictions = {}
-    
-    # Build full feature vector once
+def predict_student_levels(student_id, topic_scores):
+    """
+    Predict beginner(0) / intermediate(1) / advanced(2) for each topic.
+
+    topic_scores is expected to be a dict like:
+    {
+        "Class_label":  0–100,
+        "Constructor_label": 0–100,
+        ...
+    }
+    """
+
+    # Build a single 6-feature vector from the student's topic scores
     features = [
         topic_scores.get("Class_label", 0),
+        topic_scores.get("Constructor_label", 0),
         topic_scores.get("Encapsulation_label", 0),
         topic_scores.get("Inheritance_label", 0),
+        topic_scores.get("Interface_label", 0),
         topic_scores.get("Polymorphism_label", 0),
-        topic_scores.get("Constructor_label", 0),
-        topic_scores.get("Interface_label", 0)
     ]
 
-    for topic in topic_scores:
-        if topic in loaded_models:
-            model = loaded_models[topic]
-            encoder = loaded_encoders.get(topic)
+    X = np.array(features, dtype=float).reshape(1, -1)
 
-            level_numeric = model.predict([features])[0]
-            if encoder:
-                level = encoder.inverse_transform([int(level_numeric)])[0]
-            else:
-                level = str(level_numeric)
+    predictions = {}
 
-            predictions[topic] = level
-
-
-    # Save to profile
-    student_data = {
-        "student_id": student_id,
-        "topics": topic_scores,
-        "predicted_levels": predictions
-    }
-
-    os.makedirs("data/student_profiles", exist_ok=True)
-    with open(f"data/student_profiles/{student_id}.json", "w") as f:
-        json.dump(student_data, f, indent=2)
+    for topic, model in topic_models.items():
+        y = model.predict(X)[0]  # 0 = beginner, 1 = intermediate, 2 = advanced
+        predictions[topic] = int(y)
 
     return predictions
-

@@ -14,10 +14,13 @@ import numpy as np
 # Initialize ChatGPT client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Initialize Firebase Admin SDK
-cred = credentials.Certificate(r'../config/edora2-firebase-adminsdk-fbsvc-99ffb3c4a7.json')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+KEY_PATH = os.path.join(BASE_DIR, "firebase-admin-key.json")
+
+cred = credentials.Certificate(KEY_PATH)
+
 firebase_admin.initialize_app(cred, {
-    'databaseURL': 'https://edora2-default-rtdb.asia-southeast1.firebasedatabase.app/'
+    'databaseURL': 'https://edora3-526e7-default-rtdb.asia-southeast1.firebasedatabase.app/'
 })
 
 # Initialize Flask app
@@ -49,6 +52,7 @@ def options_response():
 
 # Load pre-trained models with error handling
 try:
+    class_model = joblib.load('models/rf_model_Class_label.pkl')
     constructor_model = joblib.load('models/rf_model_Constructor_label.pkl')
     encapsulation_model = joblib.load('models/rf_model_Encapsulation_label.pkl')
     inheritance_model = joblib.load('models/rf_model_Inheritance_label.pkl')
@@ -109,18 +113,13 @@ def get_student_data(student_identifier):
         logging.error(f"Error fetching student data: {str(e)}")
         raise
 
+
 def predict_proficiency(model, student_data, topic_name):
-    """Predict proficiency level using student data with better error handling"""
+    """Predict proficiency level using 6 topic scores as features."""
     try:
-        # Extract features from student data
         topic_scores = student_data.get('topic_scores', {})
-        
-        # Method 1: Try using just the specific topic score
-        specific_score = topic_scores.get(f'{topic_name}_label', 0)
-        features_method1 = [specific_score]
-        
-        # Method 2: Try using all topic scores
-        features_method2 = [
+
+        features = [
             topic_scores.get('Class_label', 0),
             topic_scores.get('Constructor_label', 0),
             topic_scores.get('Encapsulation_label', 0),
@@ -128,54 +127,125 @@ def predict_proficiency(model, student_data, topic_name):
             topic_scores.get('Interface_label', 0),
             topic_scores.get('Polymorphism_label', 0)
         ]
-        
-        # Method 3: Try using topic scores + other metrics
-        features_method3 = features_method2 + [
-            student_data.get('midtermScore', 0),
-            student_data.get('percentage', 0),
-            student_data.get('score', 0)
-        ]
-        
-        # Try different feature sets
-        feature_sets = [
-            features_method1,
-            features_method2, 
-            features_method3
-        ]
-        
-        for i, features in enumerate(feature_sets, 1):
-            try:
-                logging.debug(f"Trying feature set {i} for {topic_name}: {features}")
-                
-                # Convert to numpy array and ensure correct shape
-                features_array = np.array(features).reshape(1, -1)
-                logging.debug(f"Features array shape: {features_array.shape}")
-                
-                # Check if model has n_features_in_ attribute
-                if hasattr(model, 'n_features_in_'):
-                    expected_features = model.n_features_in_
-                    actual_features = features_array.shape[1]
-                    logging.debug(f"Model expects {expected_features} features, we have {actual_features}")
-                    
-                    if expected_features != actual_features:
-                        logging.warning(f"Feature mismatch for {topic_name}: expected {expected_features}, got {actual_features}")
-                        continue  # Try next feature set
-                
-                prediction = model.predict(features_array)
-                logging.info(f"Successfully predicted {topic_name} with feature set {i}: {prediction[0]}")
-                return int(prediction[0])
-                
-            except Exception as e:
-                logging.warning(f"Feature set {i} failed for {topic_name}: {str(e)}")
-                continue
-        
-        # If all feature sets fail
-        logging.error(f"All feature sets failed for {topic_name}")
-        return None
-        
+
+        features_array = np.array(features, dtype=float).reshape(1, -1)
+
+        if hasattr(model, 'n_features_in_'):
+            expected = model.n_features_in_
+            actual = features_array.shape[1]
+            if expected != actual:
+                logging.error(f"Feature count mismatch for {topic_name}: expected {expected}, got {actual}")
+                return None
+
+        prediction = model.predict(features_array)
+        return int(prediction[0])
+
     except Exception as e:
         logging.error(f"Error in prediction for {topic_name}: {str(e)}")
         return None
+
+
+
+def generate_level_specific_lesson(topic, level, current_score):
+    """Generate lesson content tailored to the student's predicted level"""
+    
+    level_contexts = {
+        'beginner': {
+            'style': 'very basic and simple',
+            'prerequisites': 'no prior knowledge assumed',
+            'examples': 'very simple, real-world analogies',
+            'pace': 'slow and detailed'
+        },
+        'intermediate': {
+            'style': 'balanced theory and practice',
+            'prerequisites': 'basic understanding assumed',
+            'examples': 'practical coding examples',
+            'pace': 'moderate'
+        },
+        'advanced': {
+            'style': 'deep dive with complex concepts',
+            'prerequisites': 'solid foundation assumed', 
+            'examples': 'complex, real-world applications',
+            'pace': 'fast-paced'
+        }
+    }
+    
+    context = level_contexts.get(level, level_contexts['beginner'])
+    
+    prompt = f"""
+    Create a {level}-level lesson about {topic} in Object-Oriented Programming.
+    
+    Student Context:
+    - Level: {level}
+    - Current understanding score: {current_score}/100
+    - Style: {context['style']}
+    - Prerequisites: {context['prerequisites']}
+    - Examples: {context['examples']}
+    - Pace: {context['pace']}
+    
+    Make sure the content is exactly appropriate for a {level} learner.
+    """
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are an expert programming instructor who creates personalized lessons."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"Error generating lesson: {str(e)}"
+
+def generate_level_specific_quiz(topic, level, quiz_level):
+    """Generate quiz content tailored to the student's predicted level"""
+    
+    difficulty_contexts = {
+        'beginner': {
+            'level1': 'very basic definitions',
+            'level2': 'simple concept application', 
+            'level3': 'basic problem solving'
+        },
+        'intermediate': {
+            'level1': 'practical applications',
+            'level2': 'concept integration',
+            'level3': 'moderate problem solving'
+        },
+        'advanced': {
+            'level1': 'complex applications',
+            'level2': 'advanced concept integration',
+            'level3': 'complex real-world problems'
+        }
+    }
+    
+    difficulty = difficulty_contexts.get(level, difficulty_contexts['beginner']).get(quiz_level, 'basic')
+    
+    prompt = f"""
+    Create a {level}-level quiz about {topic} for {quiz_level} difficulty.
+    
+    Requirements:
+    - Difficulty: {difficulty}
+    - Appropriate for {level} level students
+    - Include 5 questions with answers and explanations
+    - Format: Multiple choice, true/false, or short answer
+    
+    Make the quiz challenging but appropriate for {level} level.
+    """
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You create educational quizzes tailored to student levels."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"Error generating quiz: {str(e)}"
 
 @app.route('/check_connection', methods=['GET'])
 def check_connection():
@@ -204,6 +274,7 @@ def debug_models():
     try:
         models_info = {}
         topic_models = {
+            'Class': class_model,
             'Constructor': constructor_model,
             'Encapsulation': encapsulation_model,
             'Inheritance': inheritance_model,
@@ -234,6 +305,7 @@ def debug_models():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 @app.route('/predict_level', methods=['POST'])
 def predict_level():
     try:
@@ -246,10 +318,12 @@ def predict_level():
 
         # Fetch student data
         student_data = get_student_data(student_identifier)
-        logging.debug(f"Student data: {student_data}")
+        topic_scores = student_data.get('topic_scores', {})
+        logging.debug(f"Student topic scores: {topic_scores}")
         
         # Define topics and their corresponding models
         topic_models = {
+            'Class': class_model,
             'Constructor': constructor_model,
             'Encapsulation': encapsulation_model,
             'Inheritance': inheritance_model,
@@ -258,33 +332,83 @@ def predict_level():
         }
         
         predictions = {}
-        prediction_details = {}
+        needs_improvement = {}  # This will track which topics need improvement
         
         for topic, model in topic_models.items():
-            try:
-                proficiency_level = predict_proficiency(model, student_data, topic)
-                predictions[topic] = proficiency_level
-                prediction_details[topic] = {
-                    'success': proficiency_level is not None,
-                    'current_score': student_data.get('topic_scores', {}).get(f'{topic}_label', 'N/A')
+            # Get the percentage score for this topic
+            # Try different possible key names
+            percentage_score = 0
+            percentage_key = None
+            
+            possible_keys = [
+                f'{topic}%',
+                f'{topic}_percentage', 
+                f'{topic}Score',
+                f'{topic}_score',
+                topic.lower(),
+                topic
+            ]
+            
+            for key in possible_keys:
+                if key in topic_scores and isinstance(topic_scores[key], (int, float)):
+                    percentage_score = topic_scores[key]
+                    percentage_key = key
+                    break
+            
+            # If we still haven't found a percentage, look for any key containing the topic name
+            if percentage_score == 0:
+                for key, value in topic_scores.items():
+                    if topic.lower() in key.lower() and isinstance(value, (int, float)):
+                        percentage_score = value
+                        percentage_key = key
+                        break
+            
+            logging.debug(f"Topic {topic}: percentage = {percentage_score} (from key: {percentage_key})")
+            
+            # ✅ YOUR MAIN OBJECTIVE: Only predict for scores < 90
+            if percentage_score < 90:
+                try:
+                    predicted_level = predict_proficiency(model, student_data, topic)
+                    
+                    predictions[topic] = {
+                        'predicted_level': predicted_level,
+                        'current_percentage': percentage_score,
+                        'percentage_key_used': percentage_key,
+                        'needs_improvement': True
+                    }
+                    needs_improvement[topic] = True
+                    
+                except Exception as e:
+                    logging.error(f"Error predicting {topic}: {str(e)}")
+                    predictions[topic] = {
+                        'predicted_level': 'beginner',  # default to beginner on error
+                        'current_percentage': percentage_score,
+                        'needs_improvement': True,
+                        'error': str(e)
+                    }
+                    needs_improvement[topic] = True
+            else:
+                # Student already mastered this topic
+                predictions[topic] = {
+                    'predicted_level': 'mastered',
+                    'current_percentage': percentage_score,
+                    'needs_improvement': False,
+                    'message': 'Score ≥ 90, no improvement needed'
                 }
-                
-            except Exception as e:
-                logging.error(f"Error predicting {topic}: {str(e)}")
-                predictions[topic] = None
-                prediction_details[topic] = {
-                    'success': False,
-                    'error': str(e)
-                }
+                needs_improvement[topic] = False
         
-        # Prepare response
+        # ✅ NOW predictions is properly defined - Prepare response
         response = {
             'student_id': student_identifier,
             'student_name': student_data.get('name', 'Unknown'),
             'email': student_data.get('email', 'Unknown'),
-            'predictions': predictions,
-            'prediction_details': prediction_details,
-            'current_scores': student_data.get('topic_scores', {}),
+            'predictions': predictions,  # This is now defined
+            'analysis_summary': {
+                'total_topics': len(predictions),
+                'topics_needing_improvement': sum(needs_improvement.values()),
+                'mastered_topics': len(predictions) - sum(needs_improvement.values())
+            },
+            'current_scores': topic_scores,
             'overall_percentage': student_data.get('percentage', 0),
             'midterm_score': student_data.get('midtermScore', 0)
         }
@@ -295,6 +419,7 @@ def predict_level():
     except Exception as e:
         logging.error(f"Unexpected error: {str(e)}")
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+
 
 @app.route('/student/<student_identifier>', methods=['GET'])
 def get_student_info(student_identifier):
@@ -341,17 +466,18 @@ def generate_chatgpt_content():
     try:
         data = request.get_json()
         student_id = data.get("student_id")
-        predictions = data.get("predicted_levels")
+        predictions = data.get("predictions")  # Should be dict like {"Class":1, "Constructor":1, ...}
 
         if not student_id or not predictions:
-            return jsonify({'error': 'Missing student_id or predicted_levels'}), 400
+            return jsonify({'error': 'Missing student_id or predictions'}), 400
 
-        # 🔍 Find student in Firebase to get current scores
+        # 🔍 Find student in Firebase
         students_ref = db.reference("students")
         all_students = students_ref.get()
 
         matching_key = None
         student_data = None
+
         for key, value in all_students.items():
             if value.get("email") == student_id or value.get("student_id") == student_id:
                 matching_key = key
@@ -359,71 +485,66 @@ def generate_chatgpt_content():
                 break
 
         if not matching_key:
-            return jsonify({'error': f"Student with ID '{student_id}' not found in Firebase"}), 404
+            return jsonify({"error": f"Student '{student_id}' not found"}), 404
 
-        # Get student's current topic scores
-        topic_scores = student_data.get('topic_scores', {})
-        result = {}
+        # ✔ Access student topic scores
+        topic_scores = student_data.get("topic_scores", {})
 
-        for topic, level in predictions.items():
-            # Check if student already mastered this topic (score >= 90)
-            topic_score_key = f'{topic}_label'
-            current_score = topic_scores.get(topic_score_key, 0)
-            
-            if current_score >= 90:
-                print(f"Skipping {topic} - student already mastered with score: {current_score}")
-                result[topic] = {
-                    "level": level,
+        generated_output = {}
+
+        # Loop through each topic's predicted level
+        for topic, predicted in predictions.items():
+
+            # Convert “mastered” string into skill-level logic
+            if predicted == "mastered":
+                generated_output[topic] = {
+                    "level": "mastered",
                     "lesson": "Already mastered - no lesson needed",
                     "quizzes": {
-                        "level1": "Already mastered - no quiz needed",
-                        "level2": "Already mastered - no quiz needed", 
-                        "level3": "Already mastered - no quiz needed"
+                        "level1": "Already mastered",
+                        "level2": "Already mastered",
+                        "level3": "Already mastered"
                     },
-                    "already_mastered": True,
-                    "current_score": current_score
+                    "already_mastered": True
                 }
-            else:
-                print(f"Generating content for {topic} (Level {level}), current score: {current_score}")
-                lesson = generate_lesson(topic, level)
-                
-                # Generate quizzes for all 3 levels
-                quiz_level1 = generate_quiz(topic, level, "level1")
-                quiz_level2 = generate_quiz(topic, level, "level2")
-                quiz_level3 = generate_quiz(topic, level, "level3")
+                continue
 
-                result[topic] = {
-                    "level": level,
-                    "lesson": lesson,
-                    "quizzes": {
-                        "level1": quiz_level1,
-                        "level2": quiz_level2,
-                        "level3": quiz_level3
-                    },
-                    "already_mastered": False,
-                    "current_score": current_score,
-                    "quiz_progress": {
-                        "level1": {"completed": False, "score": 0},
-                        "level2": {"completed": False, "score": 0},
-                        "level3": {"completed": False, "score": 0}
-                    }
-                }
+            # Convert numeric prediction into friendly level name
+            level_map = {0: "beginner", 1: "intermediate", 2: "advanced"}
+            level_name = level_map.get(predicted, "beginner")
 
-        # ✅ Save to Firebase
-        db.reference(f"students/{matching_key}/generated_content").set(result)
+            # 🧠 Generate lessons and quizzes via ChatGPT
+            lesson_text = generate_lesson(topic, level_name)
+            quiz1 = generate_quiz(topic, level_name, "level1")
+            quiz2 = generate_quiz(topic, level_name, "level2")
+            quiz3 = generate_quiz(topic, level_name, "level3")
+
+            generated_output[topic] = {
+                "level": level_name,
+                "lesson": lesson_text,
+                "quizzes": {
+                    "level1": quiz1,
+                    "level2": quiz2,
+                    "level3": quiz3
+                },
+                "already_mastered": False,
+                "current_score": topic_scores.get(f"{topic}_label", 0)
+            }
+
+        # ✔ Save to Firebase
+        db.reference(f"students/{matching_key}/generated_content").set(generated_output)
 
         return jsonify({
             "status": "success",
-            "firebase_key": matching_key,
             "student_id": student_id,
-            "saved_to_firebase": True,
-            "generated_content": result
+            "generated_content": generated_output,
+            "saved_to_firebase": True
         }), 200
 
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': f'Failed to generate content: {str(e)}'}), 500
+        return jsonify({'error': f"Failed to generate content: {str(e)}"}), 500
 
 
 @app.route('/firebase_predict_levels', methods=['POST'])
@@ -452,6 +573,22 @@ def firebase_predict_levels():
     except Exception as e:
         return jsonify({'error': f'Failed to predict levels: {str(e)}'}), 500
 
+
+@app.route('/debug_student_scores/<student_identifier>', methods=['GET'])
+def debug_student_scores(student_identifier):
+    """Debug endpoint to see exactly what's in student topic_scores"""
+    try:
+        student_data = get_student_data(student_identifier)
+        topic_scores = student_data.get('topic_scores', {})
+        
+        return jsonify({
+            'status': 'success',
+            'student_id': student_identifier,
+            'topic_scores': topic_scores,
+            'topic_score_keys': list(topic_scores.keys()) if topic_scores else []
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/chatbot', methods=['POST'])
 def chatbot():
@@ -559,6 +696,8 @@ def update_quiz_progress():
         import traceback
         traceback.print_exc()
         return jsonify({'error': f'Failed to update progress: {str(e)}'}), 500
+
+
 
 
 # Update CORS for Firebase Hosting
