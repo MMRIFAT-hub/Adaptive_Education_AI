@@ -7,11 +7,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     /* General Reset */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -49,15 +45,14 @@
 
     .logo-icon {
       background-image: url('../img/logo2.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    height: 170px;
-    width: 170px;
-    display: inline-block;
-    text-indent: -9999px;
-    position: relative;
-    border-radius: 50px;
-   
+      background-size: contain;
+      background-repeat: no-repeat;
+      height: 170px;
+      width: 170px;
+      display: inline-block;
+      text-indent: -9999px;
+      position: relative;
+      border-radius: 50px;
     }
 
     .glow-title {
@@ -120,9 +115,7 @@
       gap: 20px;
     }
 
-    .form-group {
-      margin-bottom: 20px;
-    }
+    .form-group { margin-bottom: 20px; }
 
     .form-label {
       display: block;
@@ -171,18 +164,9 @@
       background: linear-gradient(45deg, #1a5276, #3498db);
     }
 
-    .btn-primary {
-      background: linear-gradient(45deg, #2ecc71, #27ae60);
-    }
-
-    .btn-primary:hover {
-      background: linear-gradient(45deg, #27ae60, #2ecc71);
-    }
-
-    .btn-full {
-      width: 100%;
-      justify-content: center;
-    }
+    .btn-primary { background: linear-gradient(45deg, #2ecc71, #27ae60); }
+    .btn-primary:hover { background: linear-gradient(45deg, #27ae60, #2ecc71); }
+    .btn-full { width: 100%; justify-content: center; }
 
     /* Student List */
     .student-list {
@@ -212,10 +196,7 @@
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     }
 
-    .student-icon {
-      font-size: 18px;
-      color: #3498db;
-    }
+    .student-icon { font-size: 18px; color: #3498db; }
 
     /* Score Indicators */
     .score-container {
@@ -227,33 +208,12 @@
       border-radius: 10px;
     }
 
-    .score-item {
-      text-align: center;
-      flex: 1;
-    }
-
-    .score-value {
-      font-size: 32px;
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-
-    .total-score {
-      color: #3498db;
-    }
-
-    .max-score {
-      color: #2ecc71;
-    }
-
-    .student-score {
-      color: #f39c12;
-    }
-
-    .score-label {
-      font-size: 14px;
-      color: #b0b0b0;
-    }
+    .score-item { text-align: center; flex: 1; }
+    .score-value { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
+    .total-score { color: #3498db; }
+    .max-score { color: #2ecc71; }
+    .student-score { color: #f39c12; }
+    .score-label { font-size: 14px; color: #b0b0b0; }
 
     /* Progress Bar */
     .progress-container {
@@ -323,46 +283,18 @@
       border-left: 4px solid #f39c12;
     }
 
-    .alert-icon {
-      font-size: 24px;
-    }
+    .alert-icon { font-size: 24px; }
 
     /* Responsive Design */
     @media screen and (max-width: 768px) {
-      .container {
-        padding: 0 15px;
-      }
-      
-      .card {
-        padding: 20px;
-      }
-      
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      .student-list {
-        grid-template-columns: 1fr;
-      }
-      
-      .score-container {
-        flex-direction: column;
-        gap: 20px;
-      }
-      
-      .topic-cards {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      
-      header .nav-bar {
-        padding: 0 20px;
-        flex-direction: column;
-        gap: 15px;
-      }
-      
-      .glow-title {
-        font-size: 24px;
-      }
+      .container { padding: 0 15px; }
+      .card { padding: 20px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .student-list { grid-template-columns: 1fr; }
+      .score-container { flex-direction: column; gap: 20px; }
+      .topic-cards { grid-template-columns: repeat(2, 1fr); }
+      header .nav-bar { padding: 0 20px; flex-direction: column; gap: 15px; }
+      .glow-title { font-size: 24px; }
     }
 
     /* Toast Notification */
@@ -382,11 +314,10 @@
       z-index: 1000;
       opacity: 0;
       transition: opacity 0.3s ease;
+      pointer-events: none;
     }
 
-    .toast.show {
-      opacity: 1;
-    }
+    .toast.show { opacity: 1; }
   </style>
 </head>
 <body>
@@ -411,11 +342,11 @@
       <form id="exam-config-form">
         <div class="form-group">
           <label class="form-label">Number of Questions</label>
-          <input type="number" id="num-questions" class="form-control" required min="1" max="20" value="6">
+          <input type="number" id="num-questions" class="form-control" required min="1" max="20" value="6" readonly>
           <small style="color: #b0b0b0; display: block; margin-top: 5px;">Note: The system is configured for exactly 6 questions matching the 6 OOP topics.</small>
         </div>
         
-        <div id="question-configs"></div>
+        <div id="question-configs" class="topic-cards"></div>
         
         <div class="score-container">
           <div class="score-item">
@@ -451,7 +382,7 @@
       <div class="form-group">
         <label class="form-label">Select Student</label>
         <div class="student-list" id="student-list">
-          <!-- Student buttons will be inserted here -->
+          <p style="color:#aaa;">Loading students...</p>
         </div>
       </div>
       
@@ -464,8 +395,7 @@
         <div class="form-group">
           <label class="form-label">Topic Marks</label>
           <div class="topic-cards" id="grading-inputs">
-            <!-- Grading inputs will be inserted here -->
-          </div>
+            </div>
         </div>
         
         <div class="score-container">
@@ -527,8 +457,6 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    let questionWeights = [];
-    let questionTopics = [];
     let totalAvailableMarks = 0;
 
     // Fixed list of topics
@@ -536,241 +464,255 @@
       'Class', 'Interface', 'Inheritance', 'Encapsulation', 'Polymorphism', 'Constructor'
     ];
 
-    // Function to show toast notification
     function showToast(message) {
       const toast = document.getElementById('toast');
       toast.querySelector('span').textContent = message;
       toast.classList.add('show');
-      
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 3000);
+      setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
-    // Function to handle exam configuration
-    document.getElementById("exam-config-form").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const numQuestions = parseInt(document.getElementById("num-questions").value);
+    // --- Core Logic: Rendering the forms ---
+    // This function builds the HTML for both the "Config" section AND the "Grading" section
+    // It is called when the page loads (with data from DB) and when the user hits "Save".
+    function renderExamForms(questionsData = []) {
+        const qcDiv = document.getElementById("question-configs");
+        const gradingDiv = document.getElementById("grading-inputs");
+        
+        qcDiv.innerHTML = '';
+        gradingDiv.innerHTML = '';
+        let loadedTotal = 0;
 
-      if (numQuestions !== 6) {
-        alert("You must enter exactly 6 questions.");
-        return;
-      }
-
-      questionWeights = [];
-      questionTopics = [];
-      totalAvailableMarks = 0;
-
-      const qcDiv = document.getElementById("question-configs");
-      qcDiv.innerHTML = '';
-
-      // Fixed topics, no need for dynamic input
-      fixedTopics.forEach((topic, index) => {
-        qcDiv.innerHTML += `
-          <div class="topic-card">
-            <div class="topic-name">${topic}</div>
-            <input type="number" id="qm-${index}" class="topic-input marks-input" placeholder="Marks" required min="1" max="20">
-          </div>
-        `;
-      });
-
-      // Update the total available marks when the marks inputs change
-      qcDiv.addEventListener("input", () => {
-        const inputs = document.querySelectorAll(".marks-input");
-        let total = 0;
-        inputs.forEach(input => {
-          total += parseFloat(input.value || 0);
-        });
-        document.getElementById("total-score").innerText = total;
-        document.getElementById("exam-max-score").innerText = total;
-        totalAvailableMarks = total;
-      });
-
-      setTimeout(() => {
-        document.querySelector(".grading-section").style.display = "block";
-        document.getElementById("grading-inputs").innerHTML = '';
-
-        // Fixed topics for grading form
         fixedTopics.forEach((topic, index) => {
-          document.getElementById("grading-inputs").innerHTML += `
-            <div class="topic-card">
-              <div class="topic-name">${topic}</div>
-              <input type="number" name="qmark-${index}" class="topic-input student-mark" placeholder="Score" required min="0" max="20">
-            </div>
-          `;
-        });
+            // Get value if loading from DB, otherwise default empty
+            const savedMark = questionsData[index] || '';
+            if(savedMark) loadedTotal += parseInt(savedMark);
 
-        document.getElementById("grading-inputs").addEventListener("input", () => {
-          const markInputs = document.querySelectorAll(".student-mark");
-          let score = 0;
-          markInputs.forEach(input => score += parseFloat(input.value || 0));
-          
-          document.getElementById("student-total-score").innerText = score;
-          document.getElementById("student-max-score").innerText = totalAvailableMarks;
-          
-          // Calculate and display percentage
-          const percentage = totalAvailableMarks > 0 ? Math.round((score / totalAvailableMarks) * 100) : 0;
-          document.getElementById("student-percentage").innerText = `${percentage}%`;
-          document.getElementById("student-progress").style.width = `${percentage}%`;
-          
-          // Identify struggling topics (score < 50% of max for that topic)
-          const maxMarks = [];
-          fixedTopics.forEach((topic, index) => {
-            const maxMarkInput = document.getElementById(`qm-${index}`);
-            maxMarks.push(parseFloat(maxMarkInput.value) || 1);
-          });
-          
-          const strugglingTopics = [];
-          markInputs.forEach((input, index) => {
-            const mark = parseFloat(input.value) || 0;
-            const maxMark = maxMarks[index];
-            if (maxMark > 0 && (mark / maxMark) < 0.5) {
-              strugglingTopics.push(fixedTopics[index]);
-            }
-          });
-          
-          const strugglingDiv = document.getElementById("struggling-questions");
-          if (strugglingTopics.length > 0) {
-            document.getElementById("struggling-text").innerHTML = `This student may need additional support in the following topics: <strong>${strugglingTopics.join(', ')}</strong>`;
-            strugglingDiv.style.display = 'flex';
-          } else {
-            strugglingDiv.style.display = 'none';
-          }
-        });
-      }, 100);
-
-      // Save the exam structure (including max score) to the database
-      const teacherId = auth.currentUser.uid;
-      const examRef = ref(db, `teachers/${teacherId}/examStructure`);
-      set(examRef, {
-        maxScore: totalAvailableMarks,
-        questions: questionWeights,
-      });
-    });
-
-    // Listen for authentication changes
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const teacherId = user.uid;
-        const studentsRef = ref(db, `teachers/${teacherId}/students`);
-        const snapshot = await get(studentsRef);
-
-        if (snapshot.exists()) {
-          const students = snapshot.val();
-          const studentListDiv = document.getElementById("student-list");
-          studentListDiv.innerHTML = '';
-
-          for (const key in students) {
-            const student = students[key];
-            studentListDiv.innerHTML += `
-              <button class="student-btn" data-email="${student.email}">
-                <i class="fas fa-user student-icon"></i>
-                ${student.email}
-              </button>
+            // 1. Render Max Mark Configuration Inputs
+            qcDiv.innerHTML += `
+              <div class="topic-card">
+                <div class="topic-name">${topic}</div>
+                <input type="number" id="qm-${index}" class="topic-input marks-input" 
+                       placeholder="Max Marks" required min="1" max="100" value="${savedMark}">
+              </div>
             `;
-          }
 
-          document.querySelectorAll('.student-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-              document.getElementById("student-email").value = btn.getAttribute("data-email");
-              document.getElementById("grade-form").style.display = "block";
-              
-              // Reset form when selecting a new student
-              document.querySelectorAll('.student-mark').forEach(input => {
-                input.value = '';
-              });
-              document.getElementById("student-total-score").innerText = '0';
-              document.getElementById("student-percentage").innerText = '0%';
-              document.getElementById("student-progress").style.width = '0%';
-              document.getElementById("struggling-questions").style.display = 'none';
-            });
-          });
+            // 2. Render Student Grading Inputs (Always rendered so the DOM exists)
+            gradingDiv.innerHTML += `
+              <div class="topic-card">
+                <div class="topic-name">${topic}</div>
+                <input type="number" name="qmark-${index}" class="topic-input student-mark" 
+                       placeholder="Score" required min="0" max="100">
+              </div>
+            `;
+        });
+
+        // Update totals if data was loaded
+        if(loadedTotal > 0) {
+            document.getElementById("total-score").innerText = loadedTotal;
+            document.getElementById("exam-max-score").innerText = loadedTotal;
+            document.getElementById("student-max-score").innerText = loadedTotal;
+            totalAvailableMarks = loadedTotal;
+            document.querySelector(".grading-section").style.display = "block";
         }
-      }
+
+        attachInputListeners();
+    }
+
+    // Re-attach listeners because innerHTML wipes them out
+    function attachInputListeners() {
+        // Listener for Max Marks changes (Live update of total)
+        const qcDiv = document.getElementById("question-configs");
+        qcDiv.addEventListener("input", (e) => {
+            if(e.target.classList.contains('marks-input')) {
+                const inputs = document.querySelectorAll(".marks-input");
+                let total = 0;
+                inputs.forEach(input => total += parseFloat(input.value || 0));
+                
+                document.getElementById("total-score").innerText = total;
+                document.getElementById("exam-max-score").innerText = total;
+                document.getElementById("student-max-score").innerText = total;
+                totalAvailableMarks = total;
+            }
+        });
+
+        // Listener for Student Grading changes (Live calculation of percentage)
+        const gradingDiv = document.getElementById("grading-inputs");
+        gradingDiv.addEventListener("input", calculateStudentScore);
+    }
+
+    function calculateStudentScore() {
+        const markInputs = document.querySelectorAll(".student-mark");
+        let score = 0;
+        markInputs.forEach(input => score += parseFloat(input.value || 0));
+        
+        document.getElementById("student-total-score").innerText = score;
+        
+        // Calculate percentage
+        const percentage = totalAvailableMarks > 0 ? Math.round((score / totalAvailableMarks) * 100) : 0;
+        document.getElementById("student-percentage").innerText = `${percentage}%`;
+        document.getElementById("student-progress").style.width = `${percentage}%`;
+        
+        // Identify struggling topics
+        const strugglingTopics = [];
+        markInputs.forEach((input, index) => {
+            const mark = parseFloat(input.value) || 0;
+            const maxMarkInput = document.getElementById(`qm-${index}`);
+            // Safety check: if maxMark isn't set, default to 1 to avoid div by zero
+            const maxMark = parseFloat(maxMarkInput ? maxMarkInput.value : 0) || 1;
+            
+            // If student got less than 50% on this topic
+            if (maxMark > 0 && (mark / maxMark) < 0.5) {
+                strugglingTopics.push(fixedTopics[index]);
+            }
+        });
+        
+        const strugglingDiv = document.getElementById("struggling-questions");
+        if (strugglingTopics.length > 0) {
+            document.getElementById("struggling-text").innerHTML = `This student may need additional support in: <strong>${strugglingTopics.join(', ')}</strong>`;
+            strugglingDiv.style.display = 'flex';
+        } else {
+            strugglingDiv.style.display = 'none';
+        }
+    }
+
+    // --- 1. Save Exam Configuration ---
+    document.getElementById("exam-config-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        
+        // Collect all values into an array
+        const questionWeights = [];
+        fixedTopics.forEach((topic, index) => {
+             const val = document.getElementById(`qm-${index}`).value;
+             questionWeights.push(parseInt(val) || 0);
+        });
+
+        const teacherId = auth.currentUser.uid;
+        const examRef = ref(db, `teachers/${teacherId}/examStructure`);
+        
+        set(examRef, {
+            maxScore: totalAvailableMarks,
+            questions: questionWeights, // This stores the actual values now
+        }).then(() => {
+            showToast("Exam structure saved!");
+            document.querySelector(".grading-section").style.display = "block";
+        });
     });
 
-    // Grading the student - UPDATED VERSION
-    document.getElementById("grade-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const studentEmail = document.getElementById("student-email").value;
-      const markInputs = document.querySelectorAll(".student-mark");
-
-      let total = 0;
-      const topicScores = {};
-
-      // Get the maximum marks for each topic from the exam configuration
-      const maxMarks = [];
-      fixedTopics.forEach((topic, index) => {
-        const maxMarkInput = document.getElementById(`qm-${index}`);
-        const maxMark = parseFloat(maxMarkInput.value) || 1; // Default to 1 to avoid division by zero
-        maxMarks.push(maxMark);
-      });
-
-      // Loop through each topic and calculate percentage
-      markInputs.forEach((input, index) => {
-        const mark = parseFloat(input.value);
-        const maxMark = maxMarks[index];
-        const topic = fixedTopics[index] + "_label";
-        
-        // Calculate percentage for this topic
-        const topicPercentage = (mark / maxMark) * 100;
-        topicScores[topic] = topicPercentage; // Store as percentage
-        
-        total += mark; // Accumulate total raw score
-      });
-
-      // Calculate overall percentage
-      const overallPercentage = totalAvailableMarks > 0 ? (total / totalAvailableMarks) * 100 : 0;
-
-      onAuthStateChanged(auth, async (user) => {
+    // --- 2. Auth State Changed - Load Data ---
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
-          const teacherId = user.uid;
-          const studentKey = studentEmail.replace(/\./g, '_');
-
-          const studentRef = ref(db, `teachers/${teacherId}/students/${studentKey}`);
-          const globalStudentRef = ref(db, `students`);
-
-          // Update Firebase with the new structure (topic scores as percentages)
-          await update(studentRef, {
-            student_id: studentKey,
-            topic_scores: topicScores, // Now stores percentages for each topic
-            midtermScore: total, // Store the raw total marks obtained
-            percentage: overallPercentage, // Store overall percentage
-            totalScore: totalAvailableMarks, // Store the total available marks
-          });
-
-          // Also update in the global students node
-          const snapshot = await get(globalStudentRef);
-          if (snapshot.exists()) {
-            const allStudents = snapshot.val();
-            for (const key in allStudents) {
-              if (allStudents[key].email === studentEmail) {
-                const studentGlobalRef = ref(db, `students/${key}`);
-                await update(studentGlobalRef, {
-                  student_id: studentKey,
-                  topic_scores: topicScores, // Percentages for each topic
-                  midtermScore: total,
-                  percentage: overallPercentage,
-                  totalScore: totalAvailableMarks,
-                });
-              }
+            const teacherId = user.uid;
+            
+            // A. Load Exam Structure immediately
+            // This ensures grading works even on page refresh
+            const examRef = ref(db, `teachers/${teacherId}/examStructure`);
+            const examSnapshot = await get(examRef);
+            
+            if (examSnapshot.exists()) {
+                const examData = examSnapshot.val();
+                // Pass the saved questions array to the render function
+                renderExamForms(examData.questions || []);
+            } else {
+                renderExamForms(); // Render empty inputs if no config exists
             }
-          }
 
-          showToast("Grade submitted successfully!");
-          
-          // Reset form after submission
-          document.querySelectorAll('.student-mark').forEach(input => {
-            input.value = '';
-          });
-          document.getElementById("student-total-score").innerText = '0';
-          document.getElementById("student-percentage").innerText = '0%';
-          document.getElementById("student-progress").style.width = '0%';
-          document.getElementById("struggling-questions").style.display = 'none';
-        } else {
-          alert("You must be logged in as a teacher.");
+            // B. Load Student List
+            const studentsRef = ref(db, `teachers/${teacherId}/students`);
+            const snapshot = await get(studentsRef);
+            const studentListDiv = document.getElementById("student-list");
+            studentListDiv.innerHTML = '';
+
+            if (snapshot.exists()) {
+                const students = snapshot.val();
+                
+                for (const key in students) {
+                    const student = students[key];
+                    studentListDiv.innerHTML += `
+                      <button class="student-btn" data-email="${student.email}">
+                        <i class="fas fa-user student-icon"></i>
+                        ${student.email}
+                      </button>
+                    `;
+                }
+
+                // Add click events to the buttons we just created
+                document.querySelectorAll('.student-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.getElementById("student-email").value = btn.getAttribute("data-email");
+                        document.getElementById("grade-form").style.display = "block";
+                        
+                        // Reset grading inputs
+                        document.querySelectorAll('.student-mark').forEach(input => input.value = '');
+                        calculateStudentScore(); // Reset calculations
+                        
+                        // Scroll to grading section
+                        document.querySelector('.grading-section').scrollIntoView({ behavior: 'smooth' });
+                    });
+                });
+            } else {
+                studentListDiv.innerHTML = '<p style="color:#aaa; padding:10px;">No students found linked to this account.</p>';
+            }
         }
-      });
+    });
+
+    // --- 3. Submit Grade ---
+    document.getElementById("grade-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const studentEmail = document.getElementById("student-email").value;
+        const markInputs = document.querySelectorAll(".student-mark");
+        const teacherId = auth.currentUser.uid;
+
+        let total = 0;
+        const topicScores = {};
+
+        markInputs.forEach((input, index) => {
+            const mark = parseFloat(input.value) || 0;
+            const maxMarkInput = document.getElementById(`qm-${index}`);
+            const maxMark = parseFloat(maxMarkInput ? maxMarkInput.value : 1) || 1;
+            
+            // Calculate percentage per topic (0-100)
+            const topicPercentage = Math.round((mark / maxMark) * 100);
+            
+            // Using _score suffix for database clarity
+            const topicKey = fixedTopics[index] + "_score"; 
+            topicScores[topicKey] = topicPercentage;
+            
+            total += mark;
+        });
+
+        const overallPercentage = totalAvailableMarks > 0 ? Math.round((total / totalAvailableMarks) * 100) : 0;
+        
+        // Replace dots in email for Firebase key
+        const studentKey = studentEmail.replace(/\./g, '_'); 
+
+        const updates = {
+            student_id: studentKey,
+            topic_scores: topicScores,
+            midtermScore: total,
+            percentage: overallPercentage,
+            totalScore: totalAvailableMarks,
+            email: studentEmail
+        };
+
+        // Update Teacher's Node
+        await update(ref(db, `teachers/${teacherId}/students/${studentKey}`), updates);
+
+        // Update Global Student Node (Searching for email match)
+        const globalSnapshot = await get(ref(db, `students`));
+        if (globalSnapshot.exists()) {
+            const allStudents = globalSnapshot.val();
+            for (const key in allStudents) {
+                if (allStudents[key].email === studentEmail) {
+                    await update(ref(db, `students/${key}`), updates);
+                }
+            }
+        }
+
+        showToast("Grade submitted successfully!");
+        
+        // Reset form
+        markInputs.forEach(input => input.value = '');
+        calculateStudentScore();
     });
   </script>
 </body>
