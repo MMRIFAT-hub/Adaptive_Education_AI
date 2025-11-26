@@ -561,5 +561,21 @@ def update_quiz_progress():
         return jsonify({'error': f'Failed to update progress: {str(e)}'}), 500
 
 
+# Update CORS for Firebase Hosting
+CORS(app, resources={
+    r"/*": {
+        "origins": [
+            "http://localhost:3000", 
+            "http://localhost:5500",
+            "https://edora2.web.app",  # Your Firebase URL
+            "https://edora2.firebaseapp.com"  # Alternative Firebase URL
+        ],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
+
+# Remove the app.run at the bottom and replace with:
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
