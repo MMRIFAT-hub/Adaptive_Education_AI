@@ -6,7 +6,6 @@
     <title>Java OOP Quiz with Firebase</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Your existing CSS styles remain exactly the same */
         * {
             margin: 0;
             padding: 0;
@@ -318,7 +317,7 @@
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+           100% { transform: rotate(360deg); }
         }
         .user-info {
             background: rgba(0, 0, 0, 0.3);
@@ -425,12 +424,45 @@
             background: linear-gradient(45deg, #d35400, #e67e22);
             transform: translateY(-2px);
         }
+        .locked-level {
+            position: relative;
+        }
+        .locked-level::after {
+            content: "Score 80%+ in previous level to unlock";
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .locked-level:hover::after {
+            opacity: 1;
+        }
+        .score-requirement {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            color: #f1c40f;
+        }
+        .no-content {
+            background: rgba(255, 193, 7, 0.2);
+            border: 2px solid #ffc107;
+            color: #ffc107;
+        }
     </style>
 </head>
 <body>
     <header>
         <h1><i class="fas fa-graduation-cap"></i> Personalized Quiz</h1>
-        <p>Test your knowledge</p>
+        <p>Test your knowledge - Score 80% or higher to unlock the next level</p>
     </header>
     
     <div class="user-info" id="user-info">
@@ -440,15 +472,19 @@
     
     <div id="quiz-container">
         <div class="level-selection">
-            <button class="level-button active" id="level-1" onclick="loadQuestions('Level 1', true)">
+            <button class="level-button active" id="level-1" onclick="loadQuestions('Level 1', false)">
                 <i class="fas fa-lock-open"></i> Level 1: Beginner
             </button>
-            <button class="level-button" id="level-2" onclick="loadQuestions('Level 2', true)" disabled>
+            <button class="level-button locked-level" id="level-2" onclick="checkLevelAccess(2)" disabled>
                 <i class="fas fa-lock"></i> Level 2: Intermediate
             </button>
-            <button class="level-button" id="level-3" onclick="loadQuestions('Level 3', true)" disabled>
+            <button class="level-button locked-level" id="level-3" onclick="checkLevelAccess(3)" disabled>
                 <i class="fas fa-lock"></i> Level 3: Advanced
             </button>
+        </div>
+        
+        <div class="score-requirement">
+            <i class="fas fa-info-circle"></i> You need to score 80% or higher to unlock the next level
         </div>
         
         <div class="loading" id="loading-container">
@@ -493,9 +529,9 @@
             
             <div class="level-status">
                 <div id="level1-status">
-                    <i class="fas fa-lock"></i>
+                    <i class="fas fa-lock-open"></i>
                     <h4>Level 1</h4>
-                    <p>Locked</p>
+                    <p>Available</p>
                 </div>
                 <div id="level2-status">
                     <i class="fas fa-lock"></i>
@@ -561,10 +597,6 @@
         const auth = firebase.auth();
         const db = firebase.database();
 
-        // Backend API configuration
-        const PREDICT_LEVEL_API_URL = 'http://127.0.0.1:5000/predict_level';
-        const GENERATE_CONTENT_API_URL = 'http://127.0.0.1:5000/generate_chatgpt_content';
-        
         // Quiz state
         let currentLevel = "Level 1";
         let currentQuestionIndex = 0;
@@ -573,8 +605,10 @@
         let selectedOption = null;
         let quizCompleted = false;
         let completedLevels = [false, false, false];
+        let levelScores = [0, 0, 0]; // Store scores for each level
         let currentUser = null;
         let isRetaking = false;
+        let userGeneratedContent = null;
 
         // Initialize the quiz
         document.addEventListener('DOMContentLoaded', () => {
@@ -607,12 +641,33 @@
             userRef.once('value').then(snapshot => {
                 const userData = snapshot.val();
                 
-                if (userData && userData.completedLevels) {
-                    completedLevels = userData.completedLevels;
+                if (userData) {
+                    if (userData.completedLevels) {
+                        completedLevels = userData.completedLevels;
+                    } else {
+                        // Initialize if not exists
+                        completedLevels = [false, false, false];
+                        userRef.set({ completedLevels });
+                    }
+                    
+                    // Load level scores if they exist
+                    if (userData.levelScores) {
+                        levelScores = userData.levelScores;
+                    } else {
+                        levelScores = [0, 0, 0];
+                        userRef.set({ levelScores });
+                    }
+                    
+                    // Store the generated content for later use
+                    if (userData.generated_content) {
+                        userGeneratedContent = userData.generated_content;
+                        console.log("Loaded generated content from Firebase:", userGeneratedContent);
+                    }
                 } else {
-                    // Initialize if not exists
+                    // Initialize if user doesn't exist
                     completedLevels = [false, false, false];
-                    userRef.set({ completedLevels });
+                    levelScores = [0, 0, 0];
+                    userRef.set({ completedLevels, levelScores });
                 }
                 
                 updateUI();
@@ -623,19 +678,56 @@
             });
         }
 
-        // Update UI based on completed levels
+        // Check if user can access a specific level
+        function checkLevelAccess(levelNum) {
+            if (levelNum === 1) return true; // Level 1 is always accessible
+            
+            // For Level 2, check if Level 1 is completed with 80% or higher
+            if (levelNum === 2) {
+                if (!completedLevels[0]) {
+                    alert("You need to complete Level 1 first before attempting Level 2.");
+                    return false;
+                }
+                if (levelScores[0] < 80) {
+                    alert("You need to score 80% or higher in Level 1 to unlock Level 2.");
+                    return false;
+                }
+            }
+            
+            // For Level 3, check if Level 2 is completed with 80% or higher
+            if (levelNum === 3) {
+                if (!completedLevels[1]) {
+                    alert("You need to complete Level 2 first before attempting Level 3.");
+                    return false;
+                }
+                if (levelScores[1] < 80) {
+                    alert("You need to score 80% or higher in Level 2 to unlock Level 3.");
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+
+        // Update UI based on completed levels and available content
         function updateUI() {
-            // Update level buttons based on completion status
+            // Update level buttons based on completion status and sequential unlocking
             const level1Button = document.getElementById('level-1');
             const level2Button = document.getElementById('level-2');
             const level3Button = document.getElementById('level-3');
             
-            // Level 1
+            // Check if content exists for each level
+            const level1Content = hasContentForLevel(0);
+            const level2Content = hasContentForLevel(1);
+            const level3Content = hasContentForLevel(2);
+            
+            console.log(`Content check - Level 1: ${level1Content}, Level 2: ${level2Content}, Level 3: ${level3Content}`);
+            
+            // Level 1 - Always available
             if (completedLevels[0]) {
                 level1Button.innerHTML = '<i class="fas fa-check"></i> Level 1: Completed';
                 level1Button.classList.add('completed');
-                level1Button.disabled = false; // Allow retaking completed levels
-                level2Button.disabled = false;
+                level1Button.disabled = false;
                 document.getElementById('db-level1').textContent = 'Completed';
                 document.getElementById('db-level1').className = 'status completed';
             } else {
@@ -644,39 +736,64 @@
                 level1Button.disabled = false;
             }
             
-            // Level 2
+            // Level 2 - Only available if Level 1 is completed with 80%+ AND content exists
             if (completedLevels[1]) {
                 level2Button.innerHTML = '<i class="fas fa-check"></i> Level 2: Completed';
                 level2Button.classList.add('completed');
-                level2Button.disabled = false; // Allow retaking completed levels
-                level3Button.disabled = false;
+                level2Button.disabled = false;
+                level2Button.classList.remove('locked-level');
                 document.getElementById('db-level2').textContent = 'Completed';
                 document.getElementById('db-level2').className = 'status completed';
-            } else if (completedLevels[0]) {
+            } else if (completedLevels[0] && levelScores[0] >= 80 && level2Content) {
+                // Only unlock Level 2 if Level 1 is completed with 80%+
                 level2Button.innerHTML = '<i class="fas fa-lock-open"></i> Level 2: Intermediate';
-                level2Button.classList.remove('completed');
+                level2Button.classList.remove('completed', 'locked-level');
                 level2Button.disabled = false;
+                level2Button.onclick = function() { loadQuestions('Level 2', false); };
+            } else if (completedLevels[0] && levelScores[0] >= 80 && !level2Content) {
+                // Level 2 has no content but user has completed Level 1 with 80%+
+                level2Button.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Level 2: No Content';
+                level2Button.classList.remove('completed', 'locked-level');
+                level2Button.classList.add('no-content');
+                level2Button.disabled = true;
+                document.getElementById('db-level2').textContent = 'No Content';
+                document.getElementById('db-level2').className = 'status no-content';
             } else {
                 level2Button.innerHTML = '<i class="fas fa-lock"></i> Level 2: Intermediate';
                 level2Button.classList.remove('completed');
+                level2Button.classList.add('locked-level');
                 level2Button.disabled = true;
+                level2Button.onclick = function() { checkLevelAccess(2); };
             }
             
-            // Level 3
+            // Level 3 - Only available if Level 2 is completed with 80%+ AND content exists
             if (completedLevels[2]) {
                 level3Button.innerHTML = '<i class="fas fa-check"></i> Level 3: Completed';
                 level3Button.classList.add('completed');
-                level3Button.disabled = false; // Allow retaking completed levels
+                level3Button.disabled = false;
+                level3Button.classList.remove('locked-level');
                 document.getElementById('db-level3').textContent = 'Completed';
                 document.getElementById('db-level3').className = 'status completed';
-            } else if (completedLevels[1]) {
+            } else if (completedLevels[1] && levelScores[1] >= 80 && level3Content) {
+                // Only unlock Level 3 if Level 2 is completed with 80%+
                 level3Button.innerHTML = '<i class="fas fa-lock-open"></i> Level 3: Advanced';
-                level3Button.classList.remove('completed');
+                level3Button.classList.remove('completed', 'locked-level');
                 level3Button.disabled = false;
+                level3Button.onclick = function() { loadQuestions('Level 3', false); };
+            } else if (completedLevels[1] && levelScores[1] >= 80 && !level3Content) {
+                // Level 3 has no content but user has completed Level 2 with 80%+
+                level3Button.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Level 3: No Content';
+                level3Button.classList.remove('completed', 'locked-level');
+                level3Button.classList.add('no-content');
+                level3Button.disabled = true;
+                document.getElementById('db-level3').textContent = 'No Content';
+                document.getElementById('db-level3').className = 'status no-content';
             } else {
                 level3Button.innerHTML = '<i class="fas fa-lock"></i> Level 3: Advanced';
                 level3Button.classList.remove('completed');
+                level3Button.classList.add('locked-level');
                 level3Button.disabled = true;
+                level3Button.onclick = function() { checkLevelAccess(3); };
             }
 
             // Update level status indicators
@@ -688,13 +805,19 @@
                 level1Status.innerHTML = '<i class="fas fa-check-circle"></i><h4>Level 1</h4><p>Completed</p>';
                 level1Status.className = 'completed';
             } else {
-                level1Status.innerHTML = '<i class="fas fa-lock"></i><h4>Level 1</h4><p>Locked</p>';
+                level1Status.innerHTML = '<i class="fas fa-lock-open"></i><h4>Level 1</h4><p>Available</p>';
                 level1Status.className = '';
             }
 
             if (completedLevels[1]) {
                 level2Status.innerHTML = '<i class="fas fa-check-circle"></i><h4>Level 2</h4><p>Completed</p>';
                 level2Status.className = 'completed';
+            } else if (completedLevels[0] && levelScores[0] >= 80 && level2Content) {
+                level2Status.innerHTML = '<i class="fas fa-lock-open"></i><h4>Level 2</h4><p>Available</p>';
+                level2Status.className = '';
+            } else if (completedLevels[0] && levelScores[0] >= 80 && !level2Content) {
+                level2Status.innerHTML = '<i class="fas fa-exclamation-triangle"></i><h4>Level 2</h4><p>No Content</p>';
+                level2Status.className = 'no-content';
             } else {
                 level2Status.innerHTML = '<i class="fas fa-lock"></i><h4>Level 2</h4><p>Locked</p>';
                 level2Status.className = '';
@@ -703,16 +826,46 @@
             if (completedLevels[2]) {
                 level3Status.innerHTML = '<i class="fas fa-check-circle"></i><h4>Level 3</h4><p>Completed</p>';
                 level3Status.className = 'completed';
+            } else if (completedLevels[1] && levelScores[1] >= 80 && level3Content) {
+                level3Status.innerHTML = '<i class="fas fa-lock-open"></i><h4>Level 3</h4><p>Available</p>';
+                level3Status.className = '';
+            } else if (completedLevels[1] && levelScores[1] >= 80 && !level3Content) {
+                level3Status.innerHTML = '<i class="fas fa-exclamation-triangle"></i><h4>Level 3</h4><p>No Content</p>';
+                level3Status.className = 'no-content';
             } else {
                 level3Status.innerHTML = '<i class="fas fa-lock"></i><h4>Level 3</h4><p>Locked</p>';
                 level3Status.className = '';
             }
         }
 
+        // Check if content exists for a specific level
+        function hasContentForLevel(level) {
+            if (!userGeneratedContent) return false;
+            
+            for (const topic in userGeneratedContent) {
+                if (userGeneratedContent[topic].level === level) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         // Fetch questions for a specific level
         async function loadQuestions(level, generateNewContent = false) {
             const levelNum = parseInt(level.split(' ')[1]);
             const index = levelNum - 1;
+
+            // Check if user can access this level
+            if (!checkLevelAccess(levelNum)) {
+                return;
+            }
+
+            // Check if content exists for this level
+            const targetLevel = levelNum - 1; // Convert to 0-based index
+            if (!hasContentForLevel(targetLevel)) {
+                alert(`No content available for ${level}. Please contact your instructor.`);
+                return;
+            }
 
             // Reset quiz state
             currentLevel = level;
@@ -729,10 +882,8 @@
             document.getElementById('submit-button').style.display = 'block';
             document.getElementById('next-button').style.display = 'none';
 
-            // Update loading text based on action
-            document.getElementById('loading-text').textContent = generateNewContent 
-                ? "Generating new questions..." 
-                : "Loading questions...";
+            // Update loading text
+            document.getElementById('loading-text').textContent = "Loading questions from Firebase...";
 
             // Update UI for selected level
             document.querySelectorAll('.level-button').forEach(btn => {
@@ -744,106 +895,31 @@
                     level === "Level 2" ? ": Intermediate" : ": Advanced");
 
             try {
-                if (generateNewContent) {
-                    // Generate new content by calling backend APIs
-                    await generateNewQuestions();
-                } else {
-                    // Load existing questions from Firebase
-                    await loadExistingQuestions();
-                }
+                // Always use existing content from Firebase
+                await loadExistingQuestions();
             } catch (error) {
                 console.error("Error loading questions:", error);
                 loadSampleQuestions(level);
             }
         }
 
-        // Generate new questions by calling backend APIs
-        async function generateNewQuestions() {
-            try {
-                // Step 1: Get predictions from backend
-                const predictResponse = await fetch(PREDICT_LEVEL_API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        student_id: currentUser.email
-                    })
-                });
-
-                if (!predictResponse.ok) {
-                    throw new Error(`Failed to get predictions: ${predictResponse.statusText}`);
-                }
-
-                const predictData = await predictResponse.json();
-                console.log("Prediction response:", predictData);
-
-                // Step 2: Generate new content based on predictions
-                const contentResponse = await fetch(GENERATE_CONTENT_API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        student_id: currentUser.email,
-                        predicted_levels: predictData.predictions
-                    })
-                });
-
-                if (!contentResponse.ok) {
-                    throw new Error(`Failed to generate content: ${contentResponse.statusText}`);
-                }
-
-                const contentData = await contentResponse.json();
-                console.log("New content generated:", contentData);
-
-                // Step 3: Extract questions from the new content
-                const extractedQuestions = extractQuestionsFromContent(contentData.generated_content);
-                
-                if (extractedQuestions.length > 0) {
-                    questions = extractedQuestions;
-                    document.getElementById('loading-container').style.display = 'none';
-                    document.getElementById('question-container').style.display = 'block';
-                    loadQuestion();
-                } else {
-                    throw new Error('No questions could be extracted from generated content');
-                }
-
-            } catch (error) {
-                console.error("Error generating new questions:", error);
-                // Fall back to loading existing questions
-                await loadExistingQuestions();
-            }
-        }
-
         // Load existing questions from Firebase
         async function loadExistingQuestions() {
-            const userId = currentUser.uid;
-            const userRef = db.ref(`students/${userId}`);
+            if (!userGeneratedContent) {
+                throw new Error('No generated content found in Firebase');
+            }
             
-            userRef.once('value').then(snapshot => {
-                const userData = snapshot.val();
-                
-                if (userData && userData.generated_content) {
-                    // Extract questions from generated_content
-                    const extractedQuestions = extractQuestionsFromContent(userData.generated_content);
-                    
-                    if (extractedQuestions.length > 0) {
-                        questions = extractedQuestions;
-                        document.getElementById('loading-container').style.display = 'none';
-                        document.getElementById('question-container').style.display = 'block';
-                        loadQuestion();
-                    } else {
-                        throw new Error('No questions found in generated content');
-                    }
-                } else {
-                    // If no existing content, generate new content
-                    generateNewQuestions();
-                }
-            }).catch(error => {
-                console.error("Error loading existing questions:", error);
-                loadSampleQuestions(currentLevel);
-            });
+            // Extract questions from generated_content
+            const extractedQuestions = extractQuestionsFromContent(userGeneratedContent);
+            
+            if (extractedQuestions.length > 0) {
+                questions = extractedQuestions;
+                document.getElementById('loading-container').style.display = 'none';
+                document.getElementById('question-container').style.display = 'block';
+                loadQuestion();
+            } else {
+                throw new Error('No questions found in generated content');
+            }
         }
 
         // Extract questions from content - UPDATED TO ALIGN WITH DATASET
@@ -1024,7 +1100,7 @@
 
         // Retake current level
         function retakeLevel() {
-            loadQuestions(currentLevel, true); // Force generating new content
+            loadQuestions(currentLevel, false);
         }
 
         // Load current question into UI (existing function)
@@ -1147,41 +1223,51 @@
 
             if (percentage >= 80) {
                 document.getElementById('result-message').textContent = 
-                    "Excellent! You've mastered this level!";
-                // Always unlock the current level if score is >= 80%
-                markLevelCompleted();
-            } else if (percentage >= 60) {
-                document.getElementById('result-message').textContent = 
-                    "Good job! Review the material and try again!";
+                    "Excellent! You've mastered this level and unlocked the next level!";
+                // Mark level as completed and save score
+                markLevelCompleted(percentage);
             } else {
                 document.getElementById('result-message').textContent = 
-                    "Keep studying! You'll do better next time!";
+                    `You scored ${percentage}%. You need 80% or higher to unlock the next level.`;
             }
         }
 
-        // Mark the current level as completed in Firebase
-        function markLevelCompleted() {
+        // Mark the current level as completed in Firebase with score
+        function markLevelCompleted(scorePercentage) {
             const currentLevelNum = parseInt(currentLevel.split(' ')[1]);
             const index = currentLevelNum - 1;
             
             // Only mark as completed if not already completed (to avoid overwriting)
-            if (!completedLevels[index]) {
-                setLevelCompleted(index);
+            if (!completedLevels[index] || levelScores[index] < scorePercentage) {
+                setLevelCompleted(index, scorePercentage);
             }
         }
 
-        // Set level as completed in Firebase (existing function)
-        function setLevelCompleted(levelIndex) {
+        // Set level as completed in Firebase with score
+        function setLevelCompleted(levelIndex, scorePercentage) {
             if (!currentUser) return;
             
             completedLevels[levelIndex] = true;
+            levelScores[levelIndex] = scorePercentage;
+            
             const userId = currentUser.uid;
             const userRef = db.ref(`students/${userId}`);
             
-            userRef.update({ completedLevels })
+            userRef.update({ 
+                completedLevels,
+                levelScores
+            })
                 .then(() => {
-                    console.log(`Level ${levelIndex + 1} marked as completed`);
+                    console.log(`Level ${levelIndex + 1} marked as completed with score ${scorePercentage}%`);
                     updateUI();
+                    
+                    // Show success message if this unlocks the next level
+                    if (levelIndex < 2 && scorePercentage >= 80) {
+                        const nextLevel = levelIndex + 2;
+                        setTimeout(() => {
+                            alert(`Congratulations! You've scored ${scorePercentage}% in Level ${levelIndex + 1} and unlocked Level ${nextLevel}!`);
+                        }, 500);
+                    }
                 })
                 .catch(error => {
                     console.error("Error updating level completion:", error);

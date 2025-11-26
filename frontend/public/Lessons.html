@@ -3,120 +3,462 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Personalized Lessons</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Personalized Lessons | EDGo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { --primary:#1a73e8; --primaryHover:#1559b4; --accent:#e91e63; }
-    body { background:#f6f8fb; }
-    #lesson-container {
-      max-width: 900px; margin: 24px auto; padding: 20px; background:#fff;
-      border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    :root {
+      --primary: #4361ee;
+      --primary-light: #4895ef;
+      --primary-dark: #3a0ca3;
+      --secondary: #7209b7;
+      --accent: #f72585;
+      --success: #4cc9f0;
+      --warning: #f8961e;
+      --danger: #e63946;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --gray: #6c757d;
+      --gray-light: #e9ecef;
+      --border-radius: 12px;
+      --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --hover-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+      --transition: all 0.3s ease;
     }
-    h2, h3 { text-align:center; margin: 0 0 16px; }
-    .row { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
-    .lesson-button {
-      padding: 10px 16px; background: var(--primary); color:#fff; border:0;
-      border-radius: 999px; font-size: 15px; cursor:pointer;
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-    .lesson-button:hover { background: var(--primaryHover); }
-    .chip { background:#eef4ff; color:#174ea6; }
-    .accent { background: var(--accent); }
-    #suggestion-container, #lesson-selection { margin: 18px 0 24px; }
-    #lessons { margin-top: 10px; }
-    .lesson-content {
-      margin: 14px 0; padding: 14px; border:1px solid #e6e8ee; border-radius: 10px;
-      background:#fafbff;
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+      color: var(--dark);
+      line-height: 1.6;
+      min-height: 100vh;
     }
-    .lesson-content h4 { margin: 0 0 10px; }
-    .quiz-content {
-      margin: 14px 0; padding: 14px; border:1px solid #e6e8ee; border-radius: 10px;
-      background:#f9f5ff;
+
+    /* Header Styles */
+    header {
+      background: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
-    .quiz-content h4 { margin: 0 0 10px; }
-    .status { text-align:center; font-size: 16px; padding: 10px; }
-    .muted { color:#6b7280; }
-    .error { color:#b00020; }
-    .success { color:#0d8a00; }
-    .loader {
-      width: 36px; height: 36px; border-radius: 50%;
-      border: 4px solid #e5e7eb; border-top-color: var(--primary);
-      animation: spin 1s linear infinite; margin: 8px auto;
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .toolbar { display:flex; justify-content:center; gap:10px; margin: 10px 0 20px; }
-    .level-badge {
+
+    .logo {
+      background-image: url('../img/logo2.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      height: 170px;
+      width: 170px;
       display: inline-block;
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: bold;
-      margin-left: 8px;
+      text-indent: -9999px;
+      position: relative;
+      border-radius: 50px;
     }
-    .level-1 { background: #e8f5e8; color: #2e7d32; }
-    .level-2 { background: #fff3e0; color: #ef6c00; }
-    .level-3 { background: #ffebee; color: #c62828; }
-    .topic-card {
+
+    .logo i {
+      margin-right: 8px;
+      color: var(--secondary);
+    }
+
+    .center-links {
+      flex: 1;
+      text-align: center;
+    }
+
+    .glow-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin: 0;
+    }
+
+    .nav-icons {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .nav-icons a {
+      color: var(--gray);
+      font-size: 1.3rem;
+      transition: var(--transition);
+    }
+
+    .nav-icons a:hover {
+      color: var(--primary);
+    }
+
+    /* Main Content */
+    main {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    #lesson-container {
       background: white;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 15px;
-      margin: 10px 0;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: var(--border-radius);
+      box-shadow: var(--card-shadow);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      transition: var(--transition);
     }
-    .quiz-question {
-      background: white;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 15px;
-      margin: 10px 0;
+
+    #lesson-container:hover {
+      box-shadow: var(--hover-shadow);
     }
-    .quiz-option {
-      padding: 8px 12px;
-      margin: 5px 0;
-      border: 1px solid #e0e0e0;
-      border-radius: 6px;
-      cursor: pointer;
+
+    h2 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: var(--dark);
+      text-align: center;
+      margin-bottom: 1.5rem;
     }
-    .quiz-option:hover {
-      background: #f5f5f5;
+
+    h3 {
+      font-size: 1.4rem;
+      font-weight: 500;
+      color: var(--dark);
+      margin-bottom: 1.2rem;
+      position: relative;
+      padding-bottom: 0.5rem;
     }
-    .correct-answer {
-      background: #e8f5e8;
-      border-color: #4caf50;
+
+    h3:after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: 3px;
     }
-    .chatbot-container {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 350px;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-      z-index: 1000;
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 1.5rem;
     }
-    .chatbot-header {
+
+    /* Button Styles */
+    .lesson-button {
+      display: inline-flex;
+      align-items: center;
+      padding: 12px 24px;
       background: var(--primary);
       color: white;
-      padding: 15px;
-      border-radius: 10px 10px 0 0;
+      border: none;
+      border-radius: 50px;
+      font-size: 0.95rem;
+      font-weight: 500;
       cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
     }
+
+    .lesson-button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(67, 97, 238, 0.4);
+    }
+
+    .lesson-button.chip {
+      background: var(--light);
+      color: var(--primary-dark);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .lesson-button.chip:hover {
+      background: var(--primary-light);
+      color: white;
+    }
+
+    .lesson-button.accent {
+      background: var(--accent);
+      box-shadow: 0 4px 10px rgba(247, 37, 133, 0.3);
+    }
+
+    .lesson-button.accent:hover {
+      background: #d91a6c;
+    }
+
+    .quiz-navigation {
+      display: flex;
+      justify-content: center;
+      margin: 2rem 0;
+    }
+
+    .full-quiz-btn {
+      background: var(--secondary);
+      color: white;
+      padding: 14px 28px;
+      border: none;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 4px 12px rgba(114, 9, 183, 0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .full-quiz-btn:hover {
+      background: #5a08a0;
+      transform: translateY(-3px);
+      box-shadow: 0 6px 18px rgba(114, 9, 183, 0.4);
+    }
+
+    /* Cards */
+    .topic-card {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      margin: 10px 0;
+      box-shadow: var(--card-shadow);
+      border-left: 4px solid var(--primary);
+      transition: var(--transition);
+    }
+
+    .topic-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--hover-shadow);
+    }
+
+    .level-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+
+    .level-1 {
+      background: rgba(76, 201, 240, 0.15);
+      color: #0a7ea4;
+    }
+
+    .level-2 {
+      background: rgba(248, 150, 30, 0.15);
+      color: #c2710e;
+    }
+
+    .level-3 {
+      background: rgba(230, 57, 70, 0.15);
+      color: #b02a37;
+    }
+
+    /* Content Sections */
+    #proficiency-container, #suggestion-container, #lesson-selection {
+      margin: 2rem 0;
+    }
+
+    .lesson-content {
+      margin: 1.5rem 0;
+      padding: 1.5rem;
+      border-radius: var(--border-radius);
+      background: #f8fbff;
+      border: 1px solid #e1e8f5;
+    }
+
+    .lesson-content h4 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+    }
+
+    .lesson-content h4 i {
+      margin-right: 8px;
+      color: var(--primary);
+    }
+
+    /* Status Messages */
+    .status {
+      text-align: center;
+      font-size: 1rem;
+      padding: 1rem;
+      border-radius: var(--border-radius);
+    }
+
+    .muted {
+      color: var(--gray);
+      background: var(--gray-light);
+    }
+
+    .error {
+      color: var(--danger);
+      background: rgba(230, 57, 70, 0.1);
+    }
+
+    .success {
+      color: #0d8a00;
+      background: rgba(76, 201, 240, 0.1);
+    }
+
+    /* Loader */
+    .loader {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 4px solid var(--gray-light);
+      border-top-color: var(--primary);
+      animation: spin 1s linear infinite;
+      margin: 8px auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 1.5rem 0;
+      flex-wrap: wrap;
+    }
+
+    /* Chatbot */
+    .chatbot-container {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      width: 380px;
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .chatbot-header {
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      color: white;
+      padding: 1rem 1.5rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
     .chatbot-messages {
-      height: 300px;
+      height: 320px;
       overflow-y: auto;
-      padding: 15px;
+      padding: 1.5rem;
+      background: #f8f9fa;
     }
+
     .chatbot-input {
       display: flex;
-      padding: 15px;
-      border-top: 1px solid #e0e0e0;
+      padding: 1rem;
+      border-top: 1px solid var(--gray-light);
+      background: white;
     }
+
     .chatbot-input input {
       flex: 1;
-      padding: 10px;
-      border: 1px solid #e0e0e0;
-      border-radius: 6px;
+      padding: 12px 16px;
+      border: 1px solid var(--gray-light);
+      border-radius: 50px;
       margin-right: 10px;
+      font-family: 'Poppins', sans-serif;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .chatbot-input input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+    }
+
+    /* Message Styles */
+    .user-message {
+      text-align: right;
+      margin: 15px 0;
+    }
+
+    .user-message div {
+      background: var(--primary);
+      color: white;
+      padding: 12px 18px;
+      border-radius: 18px 18px 4px 18px;
+      display: inline-block;
+      max-width: 80%;
+    }
+
+    .ai-message {
+      text-align: left;
+      margin: 15px 0;
+    }
+
+    .ai-message div {
+      background: white;
+      color: var(--dark);
+      padding: 12px 18px;
+      border-radius: 18px 18px 18px 4px;
+      display: inline-block;
+      max-width: 80%;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      nav {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      .nav-icons {
+        gap: 1rem;
+      }
+      
+      #lesson-container {
+        padding: 1.5rem;
+      }
+      
+      .chatbot-container {
+        width: calc(100% - 30px);
+        right: 15px;
+        bottom: 15px;
+      }
+      
+      .toolbar {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .lesson-button {
+        width: 100%;
+        justify-content: center;
+      }
     }
   </style>
 
@@ -143,19 +485,22 @@
 
     // 🔌 Your Flask backend
     const SERVER_URL = 'http://localhost:5000';
-
   </script>
 </head>
 <body>
   <header>
     <nav>
-      <ul class="nav-bar">
-        <li class="logo"><a href="homeStudent.html">EDGo Logo</a></li>
-        <div class="center-links"><h1 class="glow-title">Personalized Lessons</h1></div>
-      </ul>
-      <a href="index.html" class="home" title="Home"></a>
-      <a href="personalInfo.html" class="profile-icon" title="Profile"></a>
-      <a href="#" class="aboutUs" title="About Us"></a>
+      <a href="homeStudent.html" class="logo">
+        <i class="fas fa-graduation-cap"></i> EDGo
+      </a>
+      <div class="center-links">
+        <h1 class="glow-title">Personalized Lessons</h1>
+      </div>
+      <div class="nav-icons">
+        <a href="index.html" title="Home"><i class="fas fa-home"></i></a>
+        <a href="personalInfo.html" title="Profile"><i class="fas fa-user"></i></a>
+        <a href="#" title="About Us"><i class="fas fa-info-circle"></i></a>
+      </div>
     </nav>
   </header>
 
@@ -175,16 +520,16 @@
         <div id="suggested-topics" class="row"></div>
       </div>
 
-      <!-- All OOP topics -->
-      <div id="lesson-selection" style="display:none;">
-        <h3>All Topics</h3>
-        <div class="row" id="topic-chips"></div>
-      </div>
-
+      <!-- Only show recommended topics, remove "All Topics" section -->
+      
       <!-- Regenerate toolbar -->
       <div class="toolbar" id="toolbar" style="display:none;">
-        <button id="regen" class="lesson-button chip">Regenerate Content</button>
-        <button id="chatbot-toggle" class="lesson-button accent">Ask AI Assistant</button>
+        <button id="regen" class="lesson-button chip">
+          <i class="fas fa-sync-alt"></i> Regenerate Content
+        </button>
+        <button id="chatbot-toggle" class="lesson-button accent">
+          <i class="fas fa-robot"></i> Ask AI Assistant
+        </button>
       </div>
 
       <!-- Rendered lessons and quizzes -->
@@ -195,14 +540,19 @@
   <!-- Chatbot Interface -->
   <div id="chatbot" class="chatbot-container" style="display:none;">
     <div class="chatbot-header" onclick="toggleChatbot()">
-      <strong>AI Learning Assistant</strong> (Click to minimize)
+      <strong>AI Learning Assistant</strong>
+      <i class="fas fa-minus"></i>
     </div>
     <div class="chatbot-messages" id="chatbot-messages">
-      <div class="status muted">Hello! I'm your AI assistant. How can I help you with your lessons today?</div>
+      <div class="ai-message">
+        <div>Hello! I'm your AI assistant. How can I help you with your lessons today?</div>
+      </div>
     </div>
     <div class="chatbot-input">
       <input type="text" id="chatbot-input" placeholder="Ask a question about your lessons..." onkeypress="handleChatbotKeypress(event)">
-      <button class="lesson-button" onclick="sendChatbotMessage()">Send</button>
+      <button class="lesson-button" onclick="sendChatbotMessage()">
+        <i class="fas fa-paper-plane"></i>
+      </button>
     </div>
   </div>
 
@@ -259,14 +609,15 @@
       const container = document.getElementById('proficiency-levels');
       container.innerHTML = '';
       
+      // Only show topics that have been assessed (level 1, 2, or 3)
       Object.entries(predictions).forEach(([topic, level]) => {
-        if (level !== null && level !== undefined) {
+        if (level !== null && level !== undefined && level >= 1 && level <= 3) {
           const levelDiv = document.createElement('div');
           levelDiv.className = 'topic-card';
           levelDiv.innerHTML = `
             <strong>${capitalize(topic)}</strong>
             <span class="level-badge level-${level}">Level ${level}</span>
-            <div class="muted" style="font-size: 12px; margin-top: 5px;">
+            <div class="muted" style="font-size: 0.85rem; margin-top: 8px;">
               ${getLevelDescription(level)}
             </div>
           `;
@@ -274,7 +625,10 @@
         }
       });
       
-      document.getElementById('proficiency-container').style.display = '';
+      // Only show proficiency container if there are assessed topics
+      if (container.children.length > 0) {
+        document.getElementById('proficiency-container').style.display = '';
+      }
     }
 
     function getLevelDescription(level) {
@@ -289,46 +643,47 @@
     function renderTopicButtons(predictions) {
       const sugg = document.getElementById('suggestion-container');
       const suggBox = document.getElementById('suggested-topics');
-      const chipsRow = document.getElementById('topic-chips');
       const toolbar = document.getElementById('toolbar');
 
       suggBox.innerHTML = '';
-      chipsRow.innerHTML = '';
 
       // Define all OOP topics (matching your backend)
       const allTopics = ['Constructor', 'Encapsulation', 'Inheritance', 'Interface', 'Polymorphism'];
       
-      // Sort topics by level (lower levels first for recommendations)
-      const sortedTopics = [...allTopics].sort((a, b) => {
-        return (predictions[a] || 3) - (predictions[b] || 3);
+      // Filter topics to only show assessed ones (level 1, 2, or 3) that need improvement (level 1 or 2)
+      const recommendedTopics = allTopics.filter(topic => {
+        const level = predictions[topic];
+        return level !== null && level !== undefined && level >= 1 && level <= 2;
       });
 
-      // Recommended topics (lower proficiency levels)
-      sortedTopics.forEach(topic => {
-        const level = predictions[topic] || 1;
-        if (level <= 2) { // Recommend topics where level is 1 or 2
-          const button = document.createElement('button');
-          button.className = 'lesson-button accent';
-          button.innerHTML = `${capitalize(topic)} <span class="level-badge level-${level}">${level}</span>`;
-          button.addEventListener('click', () => loadTopicContent(topic));
-          suggBox.appendChild(button);
-        }
+      // Sort recommended topics by level (lower levels first)
+      recommendedTopics.sort((a, b) => {
+        return (predictions[a] || 1) - (predictions[b] || 1);
       });
 
-      // All topics
-      allTopics.forEach(topic => {
+      // Create buttons for recommended topics only
+      recommendedTopics.forEach(topic => {
         const level = predictions[topic] || 1;
         const button = document.createElement('button');
-        button.className = 'lesson-button chip';
-        button.innerHTML = `${capitalize(topic)} <span class="level-badge level-${level}">${level}</span>`;
+        button.className = 'lesson-button accent';
+        button.innerHTML = `<i class="fas fa-star"></i> ${capitalize(topic)} <span class="level-badge level-${level}">Level ${level}</span>`;
         button.addEventListener('click', () => loadTopicContent(topic));
-        chipsRow.appendChild(button);
+        suggBox.appendChild(button);
       });
 
-      if (allTopics.length) {
-        sugg.style.display = sortedTopics.some(t => (predictions[t] || 3) <= 2) ? '' : 'none';
-        document.getElementById('lesson-selection').style.display = '';
+      // Show the suggestion container only if there are recommended topics
+      if (recommendedTopics.length > 0) {
+        sugg.style.display = '';
         toolbar.style.display = '';
+      } else {
+        sugg.style.display = 'none';
+        toolbar.style.display = 'none';
+        
+        // If no recommended topics, show a message
+        const container = document.getElementById('lessons');
+        if (container && !container.innerHTML.includes('No recommended topics')) {
+          container.innerHTML = statusEl('No recommended topics at this time. You may have mastered all available topics!', 'success');
+        }
       }
     }
 
@@ -342,23 +697,31 @@
 
       const topicContent = content[topic];
       container.innerHTML = `
-        <h3 style="text-align:center;margin:6px 0 10px;">
+        <h3 style="text-align:center;margin:10px 0 20px;">
           ${capitalize(topic)} - Level ${topicContent.level}
         </h3>
         
         <div class="lesson-content">
-          <h4>📚 Lesson Content</h4>
+          <h4><i class="fas fa-book"></i> Lesson Content</h4>
           <div>${formatContent(topicContent.lesson)}</div>
         </div>
         
-        <div class="quiz-content">
-          <h4>🧠 Practice Quiz</h4>
-          <div>${formatQuiz(topicContent.quiz)}</div>
+        <div class="quiz-navigation">
+          <button class="full-quiz-btn" onclick="navigateToFullQuiz('${topic}')">
+            <i class="fas fa-clipboard-list"></i> Take Quiz on ${capitalize(topic)}
+          </button>
         </div>
       `;
       
       // Remember currently selected topic for "Regenerate"
       container.dataset.currentTopic = topic;
+    }
+
+    function navigateToFullQuiz(topic) {
+      // Store the selected topic in sessionStorage to use on quiz.html
+      sessionStorage.setItem('selectedQuizTopic', topic);
+      // Navigate to quiz page
+      window.location.href = 'quiz.html';
     }
 
     function formatContent(content) {
@@ -376,28 +739,6 @@
           .join('');
       }
       return content;
-    }
-
-    function formatQuiz(quizData) {
-      if (typeof quizData === 'string') {
-        return formatContent(quizData);
-      } else if (quizData && quizData.questions && Array.isArray(quizData.questions)) {
-        return quizData.questions.map((question, index) => `
-          <div class="quiz-question">
-            <p><strong>Question ${index + 1}:</strong> ${question.question}</p>
-            <div class="quiz-options">
-              ${question.options ? question.options.map((option, optIndex) => `
-                <div class="quiz-option ${optIndex === question.correct_answer ? 'correct-answer' : ''}">
-                  ${String.fromCharCode(65 + optIndex)}. ${option}
-                </div>
-              `).join('') : ''}
-            </div>
-            ${question.explanation ? `<p><strong>Explanation:</strong> ${question.explanation}</p>` : ''}
-          </div>
-        `).join('');
-      } else {
-        return '<p>Quiz content not available in expected format.</p>';
-      }
     }
 
     async function loadTopicContent(topic) {
@@ -451,8 +792,11 @@
     // ---------- Chatbot Functions ----------
     function toggleChatbot() {
       const chatbot = document.getElementById('chatbot');
+      const chatbotIcon = chatbot.querySelector('.fa-minus');
+      
       isChatbotOpen = !isChatbotOpen;
       chatbot.style.display = isChatbotOpen ? 'block' : 'none';
+      chatbotIcon.className = isChatbotOpen ? 'fas fa-minus' : 'fas fa-plus';
     }
 
     function handleChatbotKeypress(event) {
@@ -470,10 +814,8 @@
 
       // Add user message
       messagesContainer.innerHTML += `
-        <div style="text-align: right; margin: 10px 0;">
-          <div style="background: #1a73e8; color: white; padding: 10px; border-radius: 10px; display: inline-block;">
-            ${message}
-          </div>
+        <div class="user-message">
+          <div>${message}</div>
         </div>
       `;
 
@@ -482,9 +824,8 @@
 
       // Show loading
       messagesContainer.innerHTML += `
-        <div class="status muted">
-          <div class="loader" style="width: 20px; height: 20px;"></div>
-          AI is thinking...
+        <div class="ai-message">
+          <div><i class="fas fa-circle-notch fa-spin"></i> AI is thinking...</div>
         </div>
       `;
 
@@ -506,27 +847,31 @@
         const data = await response.json();
         
         // Remove loading message
-        messagesContainer.innerHTML = messagesContainer.innerHTML.replace(
-          /<div class="status muted">[\s\S]*?AI is thinking...<\/div>/, ''
-        );
+        const messages = messagesContainer.innerHTML;
+        const lastLoadingIndex = messages.lastIndexOf('<div class="ai-message"><div><i class="fas fa-circle-notch fa-spin"></i> AI is thinking...</div></div>');
+        if (lastLoadingIndex !== -1) {
+          messagesContainer.innerHTML = messages.substring(0, lastLoadingIndex);
+        }
 
         // Add AI response
         messagesContainer.innerHTML += `
-          <div style="text-align: left; margin: 10px 0;">
-            <div style="background: #f1f3f4; color: #333; padding: 10px; border-radius: 10px; display: inline-block;">
-              ${data.response}
-            </div>
+          <div class="ai-message">
+            <div>${data.response}</div>
           </div>
         `;
 
       } catch (error) {
         console.error('Chatbot error:', error);
-        messagesContainer.innerHTML = messagesContainer.innerHTML.replace(
-          /<div class="status muted">[\s\S]*?AI is thinking...<\/div>/, ''
-        );
+        // Remove loading message
+        const messages = messagesContainer.innerHTML;
+        const lastLoadingIndex = messages.lastIndexOf('<div class="ai-message"><div><i class="fas fa-circle-notch fa-spin"></i> AI is thinking...</div></div>');
+        if (lastLoadingIndex !== -1) {
+          messagesContainer.innerHTML = messages.substring(0, lastLoadingIndex);
+        }
+        
         messagesContainer.innerHTML += `
-          <div class="status error">
-            Sorry, I couldn't process your request. Please try again.
+          <div class="ai-message">
+            <div>Sorry, I couldn't process your request. Please try again.</div>
           </div>
         `;
       }
@@ -589,7 +934,7 @@
           return;
         }
 
-        // Render proficiency overview and topic buttons
+        // Render proficiency overview and topic buttons (only recommended topics)
         renderProficiencyLevels(currentPredictions);
         renderTopicButtons(currentPredictions);
         wireToolbar();
@@ -602,9 +947,8 @@
         if (recommendedTopics.length > 0) {
           loadTopicContent(recommendedTopics[0]);
         } else {
-          // If no specific recommendations, load first topic
-          const firstTopic = Object.keys(currentPredictions)[0];
-          if (firstTopic) loadTopicContent(firstTopic);
+          // If no recommended topics, show a message
+          container.innerHTML = statusEl('No recommended topics at this time. You may have mastered all available topics!', 'success');
         }
 
       } catch (error) {

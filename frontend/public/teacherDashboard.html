@@ -484,7 +484,7 @@
   <header>
     <nav>
       <ul class="nav-bar">
-        <li class="logo"><a href="index.html"><i class="fas fa-graduation-cap logo-icon"></i> EDGo</a></li>
+        <li class="logo"><a href="teacherDashboard.html"><i class="fas fa-graduation-cap logo-icon"></i> EDGo</a></li>
         <div class="center-links">
           <h1 class="glow-title">Faculty Dashboard - Enhanced Analytics</h1>
         </div>
@@ -557,11 +557,22 @@
     <p>EDGo Faculty Dashboard &copy; 2023 | Dhaka, Bangladesh</p>
   </div>
 
-  <!-- Logout Button -->
-  <button id="logout-button" class="logout-button">
+  <!-- Replace your current logout button with this -->
+<button id="logout-button" class="logout-button" onclick="handleQuickLogout()">
     <i class="fas fa-sign-out-alt"></i> Logout
-  </button>
-  <button class="learn-more">Click here to learn more</button>
+</button>
+
+<script>
+// Quick logout function - add this at the very bottom of your file
+function handleQuickLogout() {
+    // This will redirect to index.html immediately
+    window.location.href = "index.html";
+    
+    // If you want to actually sign out from Firebase, you'll need to 
+    // implement a proper Firebase auth signout on your index.html page
+    // or use the consolidated solution above
+}
+</script>
 
   <!-- Use "type=module" to use ES modules (import/export) -->
   <script type="module">
