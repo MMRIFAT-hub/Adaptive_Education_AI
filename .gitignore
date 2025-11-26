@@ -1,2 +1,3 @@
 .env
 backend/firebase-admin-key.json
+pages_backup/
