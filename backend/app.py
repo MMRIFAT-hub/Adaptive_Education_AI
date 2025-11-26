@@ -1,18 +1,16 @@
-# Rifat
 from utils.chatgpt_utils import generate_lesson, generate_quiz
 from utils.predictor import predict_student_levels
 import json
 from openai import OpenAI
-
 import os
 import firebase_admin
 from firebase_admin import credentials, db
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # Add this import
 import joblib
 import logging
 import numpy as np
 
-#Rifat
 # Initialize ChatGPT client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -24,6 +22,30 @@ firebase_admin.initialize_app(cred, {
 
 # Initialize Flask app
 app = Flask(__name__)
+
+# Configure CORS - Add this section
+CORS(app, resources={
+    r"/*": {
+        "origins": ["http://127.0.0.1:5500", "http://localhost:5500", "http://localhost:3000"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
+
+# Add CORS headers manually for OPTIONS requests
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', 'http://127.0.0.1:5500')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
+# Handle OPTIONS requests for CORS preflight
+@app.route('/predict_level', methods=['OPTIONS'])
+@app.route('/generate_chatgpt_content', methods=['OPTIONS'])
+@app.route('/chatbot', methods=['OPTIONS'])
+def options_response():
+    return '', 200
 
 # Load pre-trained models with error handling
 try:
@@ -314,7 +336,6 @@ def get_all_students():
         return jsonify({'error': str(e)}), 500
     
 
-#Rifat
 @app.route('/generate_chatgpt_content', methods=['POST'])
 def generate_chatgpt_content():
     try:
@@ -325,31 +346,68 @@ def generate_chatgpt_content():
         if not student_id or not predictions:
             return jsonify({'error': 'Missing student_id or predicted_levels'}), 400
 
-        result = {}
-
-        for topic, level in predictions.items():
-            print(f"Generating content for {topic} ({level})")
-            lesson = generate_lesson(topic, level)
-            quiz = generate_quiz(topic, level)
-
-            result[topic] = {
-                "level": level,
-                "lesson": lesson,
-                "quiz": quiz
-            }
-
-        # 🔍 Find student in Firebase
+        # 🔍 Find student in Firebase to get current scores
         students_ref = db.reference("students")
         all_students = students_ref.get()
 
         matching_key = None
+        student_data = None
         for key, value in all_students.items():
             if value.get("email") == student_id or value.get("student_id") == student_id:
                 matching_key = key
+                student_data = value
                 break
 
         if not matching_key:
             return jsonify({'error': f"Student with ID '{student_id}' not found in Firebase"}), 404
+
+        # Get student's current topic scores
+        topic_scores = student_data.get('topic_scores', {})
+        result = {}
+
+        for topic, level in predictions.items():
+            # Check if student already mastered this topic (score >= 90)
+            topic_score_key = f'{topic}_label'
+            current_score = topic_scores.get(topic_score_key, 0)
+            
+            if current_score >= 90:
+                print(f"Skipping {topic} - student already mastered with score: {current_score}")
+                result[topic] = {
+                    "level": level,
+                    "lesson": "Already mastered - no lesson needed",
+                    "quizzes": {
+                        "level1": "Already mastered - no quiz needed",
+                        "level2": "Already mastered - no quiz needed", 
+                        "level3": "Already mastered - no quiz needed"
+                    },
+                    "already_mastered": True,
+                    "current_score": current_score
+                }
+            else:
+                print(f"Generating content for {topic} (Level {level}), current score: {current_score}")
+                lesson = generate_lesson(topic, level)
+                
+                # Generate quizzes for all 3 levels
+                quiz_level1 = generate_quiz(topic, level, "level1")
+                quiz_level2 = generate_quiz(topic, level, "level2")
+                quiz_level3 = generate_quiz(topic, level, "level3")
+
+                result[topic] = {
+                    "level": level,
+                    "lesson": lesson,
+                    "quizzes": {
+                        "level1": quiz_level1,
+                        "level2": quiz_level2,
+                        "level3": quiz_level3
+                    },
+                    "already_mastered": False,
+                    "current_score": current_score,
+                    "quiz_progress": {
+                        "level1": {"completed": False, "score": 0},
+                        "level2": {"completed": False, "score": 0},
+                        "level3": {"completed": False, "score": 0}
+                    }
+                }
 
         # ✅ Save to Firebase
         db.reference(f"students/{matching_key}/generated_content").set(result)
@@ -367,7 +425,7 @@ def generate_chatgpt_content():
         traceback.print_exc()
         return jsonify({'error': f'Failed to generate content: {str(e)}'}), 500
 
-#Rifat
+
 @app.route('/firebase_predict_levels', methods=['POST'])
 def firebase_predict_levels():
     try:
@@ -395,7 +453,6 @@ def firebase_predict_levels():
         return jsonify({'error': f'Failed to predict levels: {str(e)}'}), 500
 
 
-# Rifat
 @app.route('/chatbot', methods=['POST'])
 def chatbot():
     try:
@@ -449,6 +506,60 @@ Respond helpfully and clearly.
         import traceback
         traceback.print_exc()
         return jsonify({'error': f'Failed to respond: {str(e)}'}), 500
+
+
+@app.route('/update_quiz_progress', methods=['POST'])
+def update_quiz_progress():
+    try:
+        data = request.get_json()
+        student_id = data.get("student_id")
+        topic = data.get("topic")
+        quiz_level = data.get("quiz_level")
+        score = data.get("score")
+        completed = data.get("completed", False)
+
+        if not all([student_id, topic, quiz_level]):
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        # Find student
+        students_ref = db.reference("students")
+        all_students = students_ref.get()
+
+        matching_key = None
+        for key, value in all_students.items():
+            if value.get("email") == student_id or value.get("student_id") == student_id:
+                matching_key = key
+                break
+
+        if not matching_key:
+            return jsonify({'error': f"Student with ID '{student_id}' not found"}), 404
+
+        # Update quiz progress
+        quiz_progress_path = f"students/{matching_key}/generated_content/{topic}/quiz_progress/{quiz_level}"
+        db.reference(quiz_progress_path).update({
+            "completed": completed,
+            "score": score,
+            "last_attempt": {".sv": "timestamp"}
+        })
+
+        # If student completes level 3 with good score, update topic score
+        if quiz_level == "level3" and completed and score >= 80:
+            new_topic_score = min(100, score)  # Cap at 100
+            topic_score_path = f"students/{matching_key}/topic_scores/{topic}_label"
+            db.reference(topic_score_path).set(new_topic_score)
+
+        return jsonify({
+            "status": "success",
+            "message": f"Quiz progress updated for {topic} {quiz_level}",
+            "score": score,
+            "completed": completed
+        }), 200
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Failed to update progress: {str(e)}'}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
